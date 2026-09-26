@@ -844,7 +844,7 @@ export const DepartmentManagement: React.FC<DepartmentManagementProps> = ({
                     <span>إضافة مهمة أو خدمة لمراحل المشاريع:</span>
                   </label>
                   <span className="text-[10px] text-emerald-300 font-bold bg-emerald-500/15 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                    تسمع في تسليمات المشاريع
+                    خدمات القسم
                   </span>
                 </div>
                 
@@ -1165,8 +1165,8 @@ export const DepartmentManagement: React.FC<DepartmentManagementProps> = ({
                       <Briefcase className="w-3 h-3 text-indigo-400" />
                       <span>الأدوار الوظيفية ({rolesList.length}):</span>
                     </span>
-                    <span className="text-[10px] text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">
-                      تسمع بالتعيين
+                    <span className="text-[10px] text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20 font-bold">
+                      أدوار الفريق
                     </span>
                   </div>
                   {rolesList.length > 0 ? (
@@ -1189,8 +1189,8 @@ export const DepartmentManagement: React.FC<DepartmentManagementProps> = ({
                       <CheckSquare className="w-3 h-3 text-emerald-400" />
                       <span>مهام ومراحل المشاريع ({servicesList.length}):</span>
                     </span>
-                    <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                      تسمع بالمشاريع
+                    <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 font-bold">
+                      خدمات القسم
                     </span>
                   </div>
                   {servicesList.length > 0 ? (

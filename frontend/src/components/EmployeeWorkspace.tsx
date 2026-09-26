@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import confetti from 'canvas-confetti';
 import { 
   CheckCircle2, Clock, FolderGit2, Send, Building2,
-  AlertTriangle, RotateCcw, ExternalLink, ShieldCheck, History, FileText
+  AlertTriangle, RotateCcw, ExternalLink, ShieldCheck, History, FileText,
+  Store, Mail, Phone, Globe, Copy, Check
 } from 'lucide-react';
 import type { Client, TeamMember, TaskStage } from '../types';
 import { Button } from './ui/Button';
@@ -37,6 +38,14 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
   const [deliverableNote, setDeliverableNote] = useState('');
   const [deliverableUrl, setDeliverableUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const handleCopyText = (text: string, fieldName: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedField(fieldName);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
 
   // Filter tasks assigned ONLY to this logged in employee
   const memberTasks: { client: Client; stage: TaskStage }[] = [];
@@ -670,48 +679,125 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
               {/* Left Column: Store Specs Sidebar (5 / 12) */}
               <div className="lg:col-span-5 space-y-4">
                 
-                {/* Store & Project Specs */}
-                <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2.5 text-xs shadow-sm">
-                  <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">تفاصيل المتجر والطلب</span>
-                  
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between border-b border-slate-850 pb-1.5">
-                      <span className="text-slate-400 text-[11px]">اسم المتجر:</span>
-                      <span className="text-slate-200 font-bold">{selectedTaskForDetails.client.company_name}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between border-b border-slate-850 pb-1.5">
-                      <span className="text-slate-400 text-[11px]">المنصة:</span>
-                      <span className="text-slate-200 font-bold">{selectedTaskForDetails.client.platform || 'زد'}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between border-b border-slate-850 pb-1.5">
-                      <span className="text-slate-400 text-[11px]">الباقة / الخدمة:</span>
-                      <span className="text-amber-300 font-bold text-[11px]">{selectedTaskForDetails.client.package_name || selectedTaskForDetails.client.service_type || 'باقة متكاملة'}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between border-b border-slate-850 pb-1.5">
-                      <span className="text-slate-400 text-[11px]">إيميل الوكالة:</span>
-                      <span className="text-indigo-300 font-mono text-[11px] select-all truncate max-w-[150px]">{selectedTaskForDetails.client.agency_email || 'غير محدد'}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between border-b border-slate-850 pb-1.5">
-                      <span className="text-slate-400 text-[11px]">رقم الهاتف:</span>
-                      <span className="text-slate-300 font-mono text-[11px]">{selectedTaskForDetails.client.phone || 'غير مسجل'}</span>
-                    </div>
-
-                    {selectedTaskForDetails.client.website_url && (
-                      <div className="pt-0.5">
-                        <span className="text-slate-400 text-[11px] block mb-0.5">رابط المتجر:</span>
-                        <a
-                          href={selectedTaskForDetails.client.website_url.startsWith('http') ? selectedTaskForDetails.client.website_url : `https://${selectedTaskForDetails.client.website_url}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-cyan-400 hover:underline font-mono text-[11px] truncate block"
-                        >
-                          {selectedTaskForDetails.client.website_url} ↗
-                        </a>
+                {/* 🏢 Store & Client Details Bento Card */}
+                <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-md text-xs">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-indigo-400 flex items-center justify-center text-xs">
+                        <Store className="w-3.5 h-3.5" />
                       </div>
+                      <span className="text-xs font-black text-white tracking-wide">بيانات المتجر والطلب</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-400 bg-slate-900 px-2 py-0.5 rounded-full border border-slate-800">
+                      ملف العميل
+                    </span>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {/* Store & Client Name Tile */}
+                    <div className="bg-slate-900/90 border border-slate-800/90 rounded-xl p-2.5 flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <span className="text-[10px] text-slate-400 font-bold block mb-0.5">اسم المتجر / الشركة</span>
+                        <h4 className="text-xs font-black text-white truncate">{selectedTaskForDetails.client.company_name}</h4>
+                      </div>
+                      <div className="text-left shrink-0">
+                        <span className="text-[10px] text-slate-400 font-bold block mb-0.5">المسؤول</span>
+                        <span className="text-[11px] font-bold text-slate-300 bg-slate-950 px-2 py-0.5 rounded-lg border border-slate-800">
+                          👤 {selectedTaskForDetails.client.name}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Platform & Package Grid */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-slate-900/90 border border-slate-800/90 rounded-xl p-2.5">
+                        <span className="text-[10px] text-slate-400 font-bold block mb-1">المنصة المعتمدة</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                          <span className="text-xs font-bold text-emerald-300">{selectedTaskForDetails.client.platform || 'زد (Zid)'}</span>
+                        </div>
+                      </div>
+                      <div className="bg-slate-900/90 border border-slate-800/90 rounded-xl p-2.5">
+                        <span className="text-[10px] text-slate-400 font-bold block mb-1">نوع الباقة / الخدمة</span>
+                        <span className="text-xs font-bold text-amber-300 truncate block">
+                          ✨ {selectedTaskForDetails.client.package_name || selectedTaskForDetails.client.service_type || 'باقة متكاملة'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Agency Email with Copy Button */}
+                    <div className="bg-slate-900/90 border border-slate-800/90 rounded-xl p-2.5 flex items-center justify-between gap-2">
+                      <div className="min-w-0 flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0">
+                          <Mail className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="min-w-0">
+                          <span className="text-[10px] text-slate-400 font-bold block">إيميل الوكالة المسجل</span>
+                          <span className="text-[11px] font-mono font-bold text-indigo-200 select-all truncate block">
+                            {selectedTaskForDetails.client.agency_email || 'غير مسجل'}
+                          </span>
+                        </div>
+                      </div>
+                      {selectedTaskForDetails.client.agency_email && (
+                        <button
+                          type="button"
+                          onClick={() => handleCopyText(selectedTaskForDetails.client.agency_email || '', 'email')}
+                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all cursor-pointer shrink-0"
+                          title="نسخ الإيميل"
+                        >
+                          {copiedField === 'email' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Phone with Copy Button */}
+                    <div className="bg-slate-900/90 border border-slate-800/90 rounded-xl p-2.5 flex items-center justify-between gap-2">
+                      <div className="min-w-0 flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+                          <Phone className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="min-w-0">
+                          <span className="text-[10px] text-slate-400 font-bold block">رقم هاتف العميل</span>
+                          <span className="text-[11px] font-mono font-bold text-slate-200 select-all truncate block">
+                            {selectedTaskForDetails.client.phone || 'غير مسجل'}
+                          </span>
+                        </div>
+                      </div>
+                      {selectedTaskForDetails.client.phone && (
+                        <button
+                          type="button"
+                          onClick={() => handleCopyText(selectedTaskForDetails.client.phone || '', 'phone')}
+                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all cursor-pointer shrink-0"
+                          title="نسخ رقم الهاتف"
+                        >
+                          {copiedField === 'phone' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Live Store URL Banner */}
+                    {selectedTaskForDetails.client.website_url && (
+                      <a
+                        href={selectedTaskForDetails.client.website_url.startsWith('http') ? selectedTaskForDetails.client.website_url : `https://${selectedTaskForDetails.client.website_url}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="group bg-gradient-to-r from-cyan-950/40 to-blue-950/40 hover:from-cyan-900/50 hover:to-blue-900/50 border border-cyan-500/30 hover:border-cyan-400 rounded-xl p-2.5 flex items-center justify-between transition-all cursor-pointer shadow-sm"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="w-6 h-6 rounded-lg bg-cyan-500/20 text-cyan-300 flex items-center justify-center shrink-0">
+                            <Globe className="w-3.5 h-3.5" />
+                          </div>
+                          <div className="min-w-0">
+                            <span className="text-[10px] text-cyan-300 font-bold block">رابط المتجر المباشر</span>
+                            <span className="text-[11px] font-mono text-white truncate block font-bold">
+                              {selectedTaskForDetails.client.website_url}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 text-[11px] font-bold text-cyan-300 group-hover:text-cyan-200 shrink-0">
+                          <span>زيارة ↗</span>
+                        </div>
+                      </a>
                     )}
                   </div>
                 </div>

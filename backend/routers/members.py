@@ -12,9 +12,21 @@ router = APIRouter(prefix="/api/members", tags=["Team Members & Staff"])
 @router.get("", response_model=List[schemas.TeamMemberOut])
 def get_members(department_id: Optional[int] = None, db: Session = Depends(get_db)):
     """
-    استرجاع قائمة الموظفين مع إمكانية التصفية بحسب القسم.
+    استرجاع قائمة الموظفين مع إمكانية التصفية بحسب القسم ومزامنة الموظفين الافتراضيين إذا لزم.
     """
+    if db.query(models.TeamMember).count() < 20:
+        from seed import sync_clean_team_members
+        sync_clean_team_members(db)
     return member_service.get_members(db, department_id)
+
+@router.post("/sync-defaults")
+def sync_default_members(db: Session = Depends(get_db)):
+    """
+    مزامنة وتحديث كافة بيانات موظفي الوكالة الـ 28 مع صورهم وأقسامهم.
+    """
+    from seed import sync_clean_team_members
+    sync_clean_team_members(db)
+    return {"status": "success", "message": "Synced 28 clean team members successfully", "total": db.query(models.TeamMember).count()}
 
 @router.post("", response_model=schemas.TeamMemberOut, status_code=status.HTTP_201_CREATED)
 def create_team_member(

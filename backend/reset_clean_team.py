@@ -148,26 +148,12 @@ def reset_and_seed_clean_team():
                 "is_active": True,
                 "dept_ids": [departments["production"].id]
             },
-            {
-                "name": "رنا الشافعي",
-                "username": "rana",
-                "password": "123",
-                "email": "rana@agency.com",
-                "phone": "01000000010",
-                "avatar": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150",
-                "role": "معلقة صوتية وهندسة صوت (Voiceover & Sound)",
-                "role_type": "employee",
-                "department_id": departments["production"].id,
-                "is_active": True,
-                "dept_ids": [departments["production"].id]
-            },
-
             # 4. قسم التصميم والهوية البصرية (Branding & Visual Design)
             {
                 "name": "سارة محمود",
                 "username": "head_design",
                 "password": "123",
-                "email": "sara@agency.com",
+                "email": "head.design@agency.com",
                 "phone": "01000000011",
                 "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
                 "role": "رئيس قسم التصميم والهوية البصرية",
@@ -197,19 +183,6 @@ def reset_and_seed_clean_team():
                 "phone": "01000000013",
                 "avatar": "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150",
                 "role": "مصمم جرافيك وبنرات إعلانية (Graphic Designer)",
-                "role_type": "employee",
-                "department_id": departments["branding"].id,
-                "is_active": True,
-                "dept_ids": [departments["branding"].id]
-            },
-            {
-                "name": "فاطمة عادل",
-                "username": "fatma",
-                "password": "123",
-                "email": "fatma@agency.com",
-                "phone": "01000000014",
-                "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
-                "role": "مصممة سوشيال ميديا وهوية بصرية (Brand Designer)",
                 "role_type": "employee",
                 "department_id": departments["branding"].id,
                 "is_active": True,
@@ -292,19 +265,6 @@ def reset_and_seed_clean_team():
                 "phone": "01000000020",
                 "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
                 "role": "مختص إعلانات منصات (Meta / TikTok Ads)",
-                "role_type": "employee",
-                "department_id": departments["performance_ads"].id,
-                "is_active": True,
-                "dept_ids": [departments["performance_ads"].id]
-            },
-            {
-                "name": "محمود صبري",
-                "username": "mahmoud",
-                "password": "123",
-                "email": "mahmoud@agency.com",
-                "phone": "01000000021",
-                "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150",
-                "role": "مختص إعلانات محركات البحث (Google Ads & Snapchat)",
                 "role_type": "employee",
                 "department_id": departments["performance_ads"].id,
                 "is_active": True,

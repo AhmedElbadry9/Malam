@@ -142,20 +142,6 @@ CLEAN_TEAM_DATA = [
         "is_active": True,
         "dept_codes_list": ["PRODUCTION"]
     },
-    {
-        "name": "رنا الشافعي",
-        "username": "rana",
-        "password": "123",
-        "email": "rana@agency.com",
-        "phone": "01000000010",
-        "avatar": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150",
-        "role": "معلقة صوتية وهندسة صوت (Voiceover & Sound)",
-        "role_type": "employee",
-        "dept_code": "PRODUCTION",
-        "is_active": True,
-        "dept_codes_list": ["PRODUCTION"]
-    },
-
     # 4. قسم التصميم والهوية البصرية (Branding & Visual Design)
     {
         "name": "سارة محمود",
@@ -191,19 +177,6 @@ CLEAN_TEAM_DATA = [
         "phone": "01000000013",
         "avatar": "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150",
         "role": "مصمم جرافيك وبنرات إعلانية (Graphic Designer)",
-        "role_type": "employee",
-        "dept_code": "BRANDING",
-        "is_active": True,
-        "dept_codes_list": ["BRANDING"]
-    },
-    {
-        "name": "فاطمة عادل",
-        "username": "fatma",
-        "password": "123",
-        "email": "fatma@agency.com",
-        "phone": "01000000014",
-        "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
-        "role": "مصممة سوشيال ميديا وهوية بصرية (Brand Designer)",
         "role_type": "employee",
         "dept_code": "BRANDING",
         "is_active": True,
@@ -286,19 +259,6 @@ CLEAN_TEAM_DATA = [
         "phone": "01000000020",
         "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
         "role": "مختص إعلانات منصات (Meta / TikTok Ads)",
-        "role_type": "employee",
-        "dept_code": "PERFORMANCE_ADS",
-        "is_active": True,
-        "dept_codes_list": ["PERFORMANCE_ADS"]
-    },
-    {
-        "name": "محمود صبري",
-        "username": "mahmoud",
-        "password": "123",
-        "email": "mahmoud@agency.com",
-        "phone": "01000000021",
-        "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150",
-        "role": "مختص إعلانات محركات البحث (Google Ads & Snapchat)",
         "role_type": "employee",
         "dept_code": "PERFORMANCE_ADS",
         "is_active": True,

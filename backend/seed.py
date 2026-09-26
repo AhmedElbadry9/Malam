@@ -53,7 +53,7 @@ CLEAN_TEAM_DATA = [
         "name": "مريم الشريف",
         "username": "head_social",
         "password": "123",
-        "email": "maryam@agency.com",
+        "email": "head.social@agency.com",
         "phone": "01000000003",
         "avatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150",
         "role": "رئيس قسم السوشيال ميديا والمحتوى",
@@ -107,7 +107,7 @@ CLEAN_TEAM_DATA = [
         "name": "كريم صادق",
         "username": "head_production",
         "password": "123",
-        "email": "kareem@agency.com",
+        "email": "head.production@agency.com",
         "phone": "01000000007",
         "avatar": "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150",
         "role": "رئيس قسم الإنتاج والمخرج الفني",
@@ -161,7 +161,7 @@ CLEAN_TEAM_DATA = [
         "name": "سارة محمود",
         "username": "head_design",
         "password": "123",
-        "email": "sara@agency.com",
+        "email": "head.design@agency.com",
         "phone": "01000000011",
         "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
         "role": "رئيس قسم التصميم والهوية البصرية",
@@ -215,7 +215,7 @@ CLEAN_TEAM_DATA = [
         "name": "عمر الفاروق",
         "username": "head_dev",
         "password": "123",
-        "email": "omar@agency.com",
+        "email": "head.dev@agency.com",
         "phone": "01000000015",
         "avatar": "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150",
         "role": "رئيس قسم البرمجة والمتاجر الإلكترونية",
@@ -269,7 +269,7 @@ CLEAN_TEAM_DATA = [
         "name": "حسن الدسوقي",
         "username": "head_ads",
         "password": "123",
-        "email": "hassan@agency.com",
+        "email": "head.ads@agency.com",
         "phone": "01000000019",
         "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
         "role": "رئيس قسم الإعلانات والحملات الممولة",
@@ -323,7 +323,7 @@ CLEAN_TEAM_DATA = [
         "name": "د. عمرو عثمان",
         "username": "head_strategy",
         "password": "123",
-        "email": "amr@agency.com",
+        "email": "head.strategy@agency.com",
         "phone": "01000000023",
         "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150",
         "role": "استشاري تسويقي أول وبحوث سوق",
@@ -364,7 +364,7 @@ CLEAN_TEAM_DATA = [
         "name": "منى زكي",
         "username": "mona",
         "password": "123",
-        "email": "mona@agency.com",
+        "email": "head.operations@agency.com",
         "phone": "01000000026",
         "avatar": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150",
         "role": "مدير حسابات العملاء ومتابعة الرضا (Senior Account Manager)",
@@ -415,48 +415,60 @@ def sync_clean_team_members(target_session=None):
             return
 
         for m_data in CLEAN_TEAM_DATA:
-            m_copy = dict(m_data)
-            username = m_copy.get("username")
-            dept_code = m_copy.pop("dept_code", None)
-            dept_codes_list = m_copy.pop("dept_codes_list", [])
+            try:
+                m_copy = dict(m_data)
+                username = m_copy.get("username")
+                email = m_copy.get("email")
+                dept_code = m_copy.pop("dept_code", None)
+                dept_codes_list = m_copy.pop("dept_codes_list", [])
 
-            primary_dept = departments.get(str(dept_code).upper()) if dept_code else None
-            if primary_dept:
-                m_copy["department_id"] = primary_dept.id
-
-            target_depts = []
-            for code in dept_codes_list:
-                dept_obj = departments.get(str(code).upper())
-                if dept_obj and dept_obj not in target_depts:
-                    target_depts.append(dept_obj)
-
-            existing = db.query(models.TeamMember).filter(models.TeamMember.username == username).first()
-            if existing:
-                existing.name = m_copy["name"]
-                existing.role = m_copy["role"]
-                if "email" in m_copy:
-                    existing.email = m_copy["email"]
-                if "phone" in m_copy:
-                    existing.phone = m_copy["phone"]
-                if "avatar" in m_copy:
-                    existing.avatar = m_copy["avatar"]
-                if "role_type" in m_copy:
-                    existing.role_type = m_copy["role_type"]
+                primary_dept = departments.get(str(dept_code).upper()) if dept_code else None
                 if primary_dept:
-                    existing.department_id = primary_dept.id
-                if target_depts:
-                    existing.departments = target_depts
-            else:
-                member = models.TeamMember(**m_copy)
-                db.add(member)
-                db.commit()
-                db.refresh(member)
-                if target_depts:
-                    member.departments = target_depts
+                    m_copy["department_id"] = primary_dept.id
+
+                target_depts = []
+                for code in dept_codes_list:
+                    dept_obj = departments.get(str(code).upper())
+                    if dept_obj and dept_obj not in target_depts:
+                        target_depts.append(dept_obj)
+
+                existing = db.query(models.TeamMember).filter(
+                    (models.TeamMember.username == username) | 
+                    (models.TeamMember.email == email)
+                ).first()
+
+                if existing:
+                    existing.username = username
+                    existing.name = m_copy["name"]
+                    existing.role = m_copy["role"]
+                    if email:
+                        existing.email = email
+                    if "phone" in m_copy:
+                        existing.phone = m_copy["phone"]
+                    if "avatar" in m_copy:
+                        existing.avatar = m_copy["avatar"]
+                    if "role_type" in m_copy:
+                        existing.role_type = m_copy["role_type"]
+                    if primary_dept:
+                        existing.department_id = primary_dept.id
+                    if target_depts:
+                        existing.departments = target_depts
+                    db.commit()
+                else:
+                    member = models.TeamMember(**m_copy)
+                    db.add(member)
+                    db.commit()
+                    db.refresh(member)
+                    if target_depts:
+                        member.departments = target_depts
+                    db.commit()
+            except Exception as single_err:
+                db.rollback()
+                print(f"Notice syncing member {m_data.get('username')}: {single_err}")
         db.commit()
     except Exception as e:
         db.rollback()
-        print(f"Error syncing clean team members: {e}")
+        print(f"Error in sync_clean_team_members: {e}")
     finally:
         if should_close:
             db.close()

@@ -33,6 +33,7 @@ class TeamMemberUpdate(BaseModel):
     email: Optional[str] = None
     phone: Optional[str] = None
     role: Optional[str] = None
+    avatar: Optional[str] = None
     department_id: Optional[int] = None
     department_ids: Optional[List[int]] = None
     role_type: Optional[str] = None

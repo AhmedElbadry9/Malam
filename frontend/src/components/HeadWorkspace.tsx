@@ -1036,20 +1036,9 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
             
             {/* ─── Header ─── */}
             <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between gap-3 shrink-0 bg-[#0f172a]">
-              <div className="min-w-0 flex-1">
-                <h2 className="text-sm sm:text-base font-black text-white leading-tight truncate">
-                  {selectedTaskForDispatch.stage.stage_name}
-                </h2>
-                <div className="flex items-center gap-1.5 mt-1 text-xs text-slate-400 flex-wrap">
-                  <Building2 className="w-3 h-3 text-indigo-400 shrink-0" />
-                  <span className="text-slate-200 font-semibold">{selectedTaskForDispatch.client.company_name}</span>
-                  <span className="text-slate-600">·</span>
-                  <span>{selectedTaskForDispatch.client.name}</span>
-                  <span className="text-slate-600">·</span>
-                  <StatusBadge status={selectedTaskForDispatch.stage.status} size="sm" />
-                  <PriorityBadge priority={selectedTaskForDispatch.client.priority} />
-                </div>
-              </div>
+              <h2 className="text-sm sm:text-base font-black text-white leading-tight truncate">
+                {selectedTaskForDispatch.stage.stage_name}
+              </h2>
               <button
                 onClick={() => setSelectedTaskForDispatch(null)}
                 className="w-7 h-7 rounded-lg text-slate-500 hover:text-white hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer shrink-0 text-base"
@@ -1100,12 +1089,12 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                   {/* Quick Client Context Strip */}
                   <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 flex items-center justify-between gap-3 text-xs">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-slate-400">العميل:</span>
-                      <span className="text-white font-bold">{selectedTaskForDispatch.client.company_name}</span>
-                      <span className="text-slate-600">|</span>
-                      <span className="text-slate-400 font-medium">
-                        {selectedTaskForDispatch.client.platform || 'زد'} · {selectedTaskForDispatch.client.package_name || selectedTaskForDispatch.client.service_type || 'باقة متكاملة'}
-                      </span>
+                      <Building2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                      <span className="text-white font-black">{selectedTaskForDispatch.client.company_name}</span>
+                      <span className="text-slate-400">({selectedTaskForDispatch.client.name})</span>
+                      <span className="text-slate-600">·</span>
+                      <StatusBadge status={selectedTaskForDispatch.stage.status} size="sm" />
+                      <PriorityBadge priority={selectedTaskForDispatch.client.priority} />
                     </div>
                     <button
                       type="button"
@@ -1173,48 +1162,61 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
               {dispatchModalTab === 'info' && (
                 <div className="p-5 space-y-4 animate-fadeIn">
                   
-                  {/* Platform & Quick Actions */}
-                  <div className="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800 flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <span className="text-[11px] font-semibold text-slate-400 block mb-0.5">الباقة والمنصة</span>
-                      <div className="text-xs font-bold text-white">
-                        <span className="text-teal-400 font-bold">{selectedTaskForDispatch.client.platform || 'زد'}</span>
-                        <span className="text-slate-600 mx-1.5">·</span>
-                        <span className="text-slate-200">{selectedTaskForDispatch.client.package_name || selectedTaskForDispatch.client.service_type || 'باقة متكاملة'}</span>
+                  {/* Client & Project Overview Box */}
+                  <div className="p-4 rounded-xl bg-slate-900/70 border border-slate-800 space-y-3">
+                    {/* Row 1: Company, Client Name, Status, Priority + Action Links */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Building2 className="w-4 h-4 text-indigo-400 shrink-0" />
+                        <span className="text-sm font-black text-white">{selectedTaskForDispatch.client.company_name}</span>
+                        <span className="text-xs text-slate-400 font-semibold">({selectedTaskForDispatch.client.name})</span>
+                        <span className="text-slate-600">·</span>
+                        <StatusBadge status={selectedTaskForDispatch.stage.status} size="sm" />
+                        <PriorityBadge priority={selectedTaskForDispatch.client.priority} />
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {selectedTaskForDispatch.client.website_url && (
+                          <a
+                            href={selectedTaskForDispatch.client.website_url.startsWith('http') ? selectedTaskForDispatch.client.website_url : `https://${selectedTaskForDispatch.client.website_url}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-2.5 py-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 text-xs font-bold flex items-center gap-1.5 border border-cyan-500/30 transition-colors"
+                          >
+                            <Globe className="w-3.5 h-3.5" />
+                            المتجر ↗
+                          </a>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => onOpenDriveModal(selectedTaskForDispatch.client)}
+                          className="px-2.5 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-bold flex items-center gap-1.5 border border-amber-500/30 transition-colors cursor-pointer"
+                        >
+                          <FolderGit2 className="w-3.5 h-3.5" />
+                          Drive
+                        </button>
+                        {onOpenHistoryModal && (
+                          <button
+                            type="button"
+                            onClick={() => onOpenHistoryModal(selectedTaskForDispatch.stage, selectedTaskForDispatch.client)}
+                            className="px-2.5 py-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 text-xs font-bold flex items-center gap-1.5 border border-indigo-500/30 transition-colors cursor-pointer"
+                          >
+                            <History className="w-3.5 h-3.5" />
+                            السجل
+                          </button>
+                        )}
                       </div>
                     </div>
 
-                    {/* Action buttons */}
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {selectedTaskForDispatch.client.website_url && (
-                        <a
-                          href={selectedTaskForDispatch.client.website_url.startsWith('http') ? selectedTaskForDispatch.client.website_url : `https://${selectedTaskForDispatch.client.website_url}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="px-2.5 py-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 text-xs font-bold flex items-center gap-1.5 border border-cyan-500/30 transition-colors"
-                        >
-                          <Globe className="w-3.5 h-3.5" />
-                          المتجر ↗
-                        </a>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => onOpenDriveModal(selectedTaskForDispatch.client)}
-                        className="px-2.5 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-bold flex items-center gap-1.5 border border-amber-500/30 transition-colors cursor-pointer"
-                      >
-                        <FolderGit2 className="w-3.5 h-3.5" />
-                        Drive
-                      </button>
-                      {onOpenHistoryModal && (
-                        <button
-                          type="button"
-                          onClick={() => onOpenHistoryModal(selectedTaskForDispatch.stage, selectedTaskForDispatch.client)}
-                          className="px-2.5 py-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 text-xs font-bold flex items-center gap-1.5 border border-indigo-500/30 transition-colors cursor-pointer"
-                        >
-                          <History className="w-3.5 h-3.5" />
-                          السجل
-                        </button>
-                      )}
+                    {/* Row 2: Platform & Package */}
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-slate-400 font-medium">الباقة والمنصة:</span>
+                      <div className="font-bold text-white">
+                        <span className="text-teal-400">{selectedTaskForDispatch.client.platform || 'زد'}</span>
+                        <span className="text-slate-600 mx-1.5">·</span>
+                        <span className="text-slate-200">{selectedTaskForDispatch.client.package_name || selectedTaskForDispatch.client.service_type || 'باقة متكاملة'}</span>
+                      </div>
                     </div>
                   </div>
 

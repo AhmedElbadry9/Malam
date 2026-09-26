@@ -4,7 +4,7 @@ import {
   RotateCcw, ExternalLink, ShieldCheck, Users, Search,
   Check, UserCheck, Send, AlertTriangle,
   Layers, History, Edit, FileText,
-  Globe, Copy, Sparkles
+  Globe, Copy, Sparkles, UserPlus
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import type { Client, Department, TeamMember, TaskStage } from '../types';
@@ -117,7 +117,7 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
     const assigner = stage.assigned_by || members.find(m => m.id === stage.assigned_by_id);
     const isAssignedByManagement = assigner && (assigner.role_type === 'admin' || assigner.role_type === 'manager' || assigner.role_type === 'super_admin');
     
-    return !!isAssignedByManagement;
+    return !isAssignedByManagement;
   };
 
   const reviewTasks = deptTasks.filter(item => 
@@ -164,7 +164,6 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
   // Open the unified dispatch modal
   const handleOpenDispatch = (client: Client, stage: TaskStage) => {
     setSelectedTaskForDispatch({ client, stage });
-    // Default to existing assigned employee or the first available employee if unassigned
     if (stage.assigned_member_id) {
       setDispatchMemberId(stage.assigned_member_id);
     } else {
@@ -1019,212 +1018,241 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* 🚀 THE UNIFIED TASK DISPATCH & DIRECTIVES MODAL (Single Consolidated Hub)  */}
+      {/* 🚀 THE UNIFIED TASK DISPATCH & DIRECTIVES MODAL (Consolidated 2-Column Hub) */}
       {/* ========================================================================= */}
       {selectedTaskForDispatch && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-3xl bg-slate-900 border border-slate-750 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-md overflow-y-auto animate-fadeIn">
+          <div className="w-full max-w-4xl bg-slate-900 border border-slate-750 rounded-2xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden my-auto">
             
-            {/* Header */}
-            <div className="px-6 py-4.5 border-b border-slate-800 bg-slate-950/90 flex items-start justify-between gap-4 shrink-0">
-              <div className="space-y-1.5 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
+            {/* Header: Spacious, Uncrowded & Clean */}
+            <div className="px-6 py-4.5 border-b border-slate-800 bg-slate-950/95 flex items-start justify-between gap-4 shrink-0">
+              <div className="space-y-1 min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
                   <span className="px-2.5 py-0.5 rounded-md text-xs font-bold bg-teal-500/15 text-teal-300 border border-teal-500/30">
                     {selectedTaskForDispatch.client.platform || 'زد'}
                   </span>
                   <span className="px-2.5 py-0.5 rounded-md text-xs font-bold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
                     {selectedTaskForDispatch.client.package_name || selectedTaskForDispatch.client.service_type || 'باقة متكاملة'}
                   </span>
-                  <h2 className="text-base sm:text-lg font-black text-white leading-snug">
-                    {selectedTaskForDispatch.stage.stage_name}
-                  </h2>
+                  <PriorityBadge priority={selectedTaskForDispatch.client.priority} />
+                  <StatusBadge status={selectedTaskForDispatch.stage.status} size="sm" />
                 </div>
-                <p className="text-xs text-slate-400 flex items-center gap-2">
+                
+                <h2 className="text-base sm:text-lg font-black text-white leading-snug">
+                  {selectedTaskForDispatch.stage.stage_name}
+                </h2>
+
+                <p className="text-xs text-slate-400 flex items-center gap-1.5 flex-wrap pt-0.5">
                   <Building2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                  <span className="text-slate-200 font-bold">{selectedTaskForDispatch.client.company_name}</span>
+                  <span className="text-slate-100 font-bold">{selectedTaskForDispatch.client.company_name}</span>
                   <span className="text-slate-600">•</span>
-                  <span>العميل: {selectedTaskForDispatch.client.name}</span>
+                  <span>العميل: <strong className="text-slate-300 font-semibold">{selectedTaskForDispatch.client.name}</strong></span>
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0 pt-0.5">
-                <StatusBadge status={selectedTaskForDispatch.stage.status} size="sm" />
-                <PriorityBadge priority={selectedTaskForDispatch.client.priority} />
-                <button
-                  type="button"
-                  onClick={() => setSelectedTaskForDispatch(null)}
-                  className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer text-sm font-bold mr-1"
-                >
-                  ✕
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedTaskForDispatch(null)}
+                className="w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer text-sm font-bold shrink-0 mt-0.5"
+                title="إغلاق"
+              >
+                ✕
+              </button>
             </div>
 
-            {/* Scrollable Body */}
-            <div className="p-6 overflow-y-auto flex-1 space-y-5 bg-slate-900">
+            {/* Modal Body: Responsive 2-Column Layout */}
+            <div className="p-5 sm:p-6 overflow-y-auto flex-1 grid grid-cols-1 lg:grid-cols-12 gap-5 bg-slate-900/95">
               
-              {/* 1. Quick Client & Store Bar */}
-              <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
-                <div className="flex items-center gap-4 flex-wrap">
-                  {selectedTaskForDispatch.client.website_url && (
-                    <a
-                      href={selectedTaskForDispatch.client.website_url.startsWith('http') ? selectedTaskForDispatch.client.website_url : `https://${selectedTaskForDispatch.client.website_url}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-cyan-400 hover:underline font-mono flex items-center gap-1 font-bold"
-                    >
-                      <Globe className="w-3.5 h-3.5" />
-                      <span>رابط المتجر ↗</span>
-                    </a>
-                  )}
+              {/* Column 1: Client Intel & Management Reference (5 cols on lg) */}
+              <div className="lg:col-span-5 space-y-4">
+                
+                {/* Store & Client Intel Card */}
+                <div className="rounded-xl bg-slate-950/80 border border-slate-800 p-4 space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-850 pb-2">
+                    <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Globe className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>بيانات المتجر والتواصل</span>
+                    </span>
+                    {selectedTaskForDispatch.client.website_url && (
+                      <a
+                        href={selectedTaskForDispatch.client.website_url.startsWith('http') ? selectedTaskForDispatch.client.website_url : `https://${selectedTaskForDispatch.client.website_url}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] text-cyan-400 hover:text-cyan-300 font-bold flex items-center gap-1 hover:underline"
+                      >
+                        <span>زيارة المتجر</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                  </div>
 
-                  {selectedTaskForDispatch.client.agency_email && (
-                    <div className="flex items-center gap-1 text-slate-300">
-                      <span className="text-slate-500">إيميل الوكالة:</span>
-                      <span className="text-indigo-300 font-mono select-all">{selectedTaskForDispatch.client.agency_email}</span>
+                  {/* Agency Email Box */}
+                  <div className="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex-1 text-right">
+                      <span className="text-[10px] text-slate-400 block">إيميل الوكالة للمتجر</span>
+                      <span className="text-xs font-mono text-indigo-300 font-semibold truncate block select-all" dir="ltr">
+                        {selectedTaskForDispatch.client.agency_email || 'غير مسجل'}
+                      </span>
+                    </div>
+                    {selectedTaskForDispatch.client.agency_email && (
                       <button
                         type="button"
                         onClick={() => handleCopyText(selectedTaskForDispatch.client.agency_email || '', 'email')}
-                        className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                        className="p-1.5 rounded-md hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer shrink-0"
                         title="نسخ الإيميل"
                       >
-                        {copiedField === 'email' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        {copiedField === 'email' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
 
-                  {selectedTaskForDispatch.client.phone && (
-                    <div className="flex items-center gap-1 text-slate-300">
-                      <span className="text-slate-500">الهاتف:</span>
-                      <span className="text-slate-200 font-mono select-all">{selectedTaskForDispatch.client.phone}</span>
+                  {/* Phone Box */}
+                  <div className="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex-1 text-right">
+                      <span className="text-[10px] text-slate-400 block">رقم هاتف التواصل</span>
+                      <span className="text-xs font-mono text-slate-200 font-semibold truncate block select-all" dir="ltr">
+                        {selectedTaskForDispatch.client.phone || 'غير مسجل'}
+                      </span>
+                    </div>
+                    {selectedTaskForDispatch.client.phone && (
                       <button
                         type="button"
                         onClick={() => handleCopyText(selectedTaskForDispatch.client.phone || '', 'phone')}
-                        className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
-                        title="نسخ الهاتف"
+                        className="p-1.5 rounded-md hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer shrink-0"
+                        title="نسخ رقم الهاتف"
                       >
-                        {copiedField === 'phone' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        {copiedField === 'phone' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                       </button>
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
 
-                {/* Quick actions in intel bar */}
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    icon={<FolderGit2 className="w-3.5 h-3.5 text-amber-400" />}
-                    onClick={() => onOpenDriveModal(selectedTaskForDispatch.client)}
-                  >
-                    ملفات Drive
-                  </Button>
-                  {onOpenHistoryModal && (
+                  {/* Drive & History Quick Access */}
+                  <div className="flex items-center gap-2 pt-1">
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
-                      icon={<History className="w-3.5 h-3.5 text-indigo-400" />}
-                      onClick={() => onOpenHistoryModal(selectedTaskForDispatch.stage, selectedTaskForDispatch.client)}
+                      icon={<FolderGit2 className="w-3.5 h-3.5 text-amber-400" />}
+                      onClick={() => onOpenDriveModal(selectedTaskForDispatch.client)}
+                      className="flex-1 text-xs"
                     >
-                      السجل
+                      ملفات Drive
                     </Button>
-                  )}
-                </div>
-              </div>
-
-              {/* 2. Management Brief Reference (مرجع الإدارة) */}
-              {(selectedTaskForDispatch.stage.description || selectedTaskForDispatch.client.request_details) && (
-                <div className="rounded-xl bg-indigo-950/20 border border-indigo-500/30 p-4 space-y-1.5">
-                  <div className="flex items-center gap-2 text-xs font-bold text-indigo-300">
-                    <FileText className="w-4 h-4 text-indigo-400" />
-                    <span>توجيهات ومتطلبات الإدارة العامة (مرجع للاطلاع):</span>
+                    {onOpenHistoryModal && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        icon={<History className="w-3.5 h-3.5 text-indigo-400" />}
+                        onClick={() => onOpenHistoryModal(selectedTaskForDispatch.stage, selectedTaskForDispatch.client)}
+                        className="text-xs"
+                      >
+                        السجل
+                      </Button>
+                    )}
                   </div>
-                  <p className="text-xs text-slate-200 leading-relaxed whitespace-pre-wrap font-sans">
-                    {selectedTaskForDispatch.stage.description || selectedTaskForDispatch.client.request_details}
-                  </p>
-                </div>
-              )}
-
-              {/* 3. The Core Dispatch & Directives Form */}
-              <form onSubmit={handleDispatchSubmit} className="space-y-4 pt-1">
-                
-                {/* Step 1: Select Employee */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/40 flex items-center justify-center text-[11px] font-bold">1</span>
-                      <span>اختر الموظف المنفذ من فريق قسمك:</span>
-                    </span>
-                    <span className="text-[11px] text-slate-400 font-normal">الموظف الذي سينفذ هذه المرحلة</span>
-                  </label>
-                  <select
-                    required
-                    value={dispatchMemberId}
-                    onChange={(e) => setDispatchMemberId(e.target.value ? Number(e.target.value) : '')}
-                    className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700/90 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-white font-bold text-xs cursor-pointer shadow-inner"
-                  >
-                    <option value="" disabled>-- اختر الموظف المنفذ --</option>
-                    {deptMembers.map(m => (
-                      <option key={m.id} value={m.id}>
-                        👤 {m.name} ({m.role}) {m.id === currentMember.id ? '★ أنت (رئيس القسم)' : ''}
-                      </option>
-                    ))}
-                  </select>
                 </div>
 
-                {/* Step 2: Head Directives */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-bold text-teal-300 flex items-center gap-1.5">
-                      <span className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/40 flex items-center justify-center text-[11px] font-bold">2</span>
-                      <span>توجيهاتك الخاصة وتعليمات العمل للموظف:</span>
-                    </label>
-                    <span className="text-[11px] text-slate-400">ستصل للموظف كتعليمات فنية مباشرة</span>
-                  </div>
-                  <textarea
-                    rows={4}
-                    value={dispatchInstructions}
-                    onChange={(e) => setDispatchInstructions(e.target.value)}
-                    placeholder="اكتب هنا توجيهاتك الفنية وتفاصيل العمل المطلوبة من الموظف بدقة (الزوايا، المقاسات، الملاحظات الخاصة، المواعيد)..."
-                    className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700/90 focus:border-teal-400 focus:ring-1 focus:ring-teal-400 text-white placeholder-slate-500 leading-relaxed text-xs resize-none shadow-inner"
-                  />
-                </div>
-
-                {/* Success Message */}
-                {dispatchSuccessMsg && (
-                  <div className="p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold flex items-center gap-2 animate-fadeIn">
-                    <CheckCircle2 className="w-4 h-4 shrink-0" />
-                    <span>{dispatchSuccessMsg}</span>
+                {/* Management Reference (مرجع الإدارة) */}
+                {(selectedTaskForDispatch.stage.description || selectedTaskForDispatch.client.request_details) && (
+                  <div className="rounded-xl bg-indigo-950/20 border border-indigo-500/30 p-4 space-y-1.5">
+                    <div className="flex items-center gap-2 text-xs font-bold text-indigo-300">
+                      <FileText className="w-4 h-4 text-indigo-400 shrink-0" />
+                      <span>متطلبات الإدارة العامة (مرجع):</span>
+                    </div>
+                    <p className="text-xs text-slate-200 leading-relaxed whitespace-pre-wrap font-sans max-h-36 overflow-y-auto">
+                      {selectedTaskForDispatch.stage.description || selectedTaskForDispatch.client.request_details}
+                    </p>
                   </div>
                 )}
 
-                {/* Step 3: Single Primary Submit Button */}
-                <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-800">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSelectedTaskForDispatch(null)}
-                  >
-                    إلغاء
-                  </Button>
+              </div>
 
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    size="md"
-                    disabled={!dispatchMemberId || isSubmittingDispatch}
-                    loading={isSubmittingDispatch}
-                    icon={<Send className="w-4 h-4" />}
-                    className="bg-teal-600 hover:bg-teal-500 text-white font-black px-6 shadow-lg shadow-teal-500/20"
-                  >
-                    {selectedTaskForDispatch.stage.assigned_member_id 
-                      ? '💾 حفظ وتحديث التكليف والتوجيهات' 
-                      : '🚀 إرسال وتكليف المهمة للموظف'}
-                  </Button>
-                </div>
+              {/* Column 2: The Core Dispatch & Directives Form (7 cols on lg) */}
+              <div className="lg:col-span-7 flex flex-col justify-between">
+                <form onSubmit={handleDispatchSubmit} className="space-y-4 flex flex-col h-full justify-between">
+                  
+                  <div className="space-y-4">
+                    {/* Step 1: Select Employee */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/40 flex items-center justify-center text-[11px] font-bold">1</span>
+                          <span>اختر الموظف المنفذ من فريق قسمك:</span>
+                        </span>
+                        <span className="text-[11px] text-slate-400 font-normal">المكلف بالتنفيذ</span>
+                      </label>
+                      <div className="relative">
+                        <select
+                          required
+                          value={dispatchMemberId}
+                          onChange={(e) => setDispatchMemberId(e.target.value ? Number(e.target.value) : '')}
+                          className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700/90 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-white font-bold text-xs cursor-pointer shadow-inner appearance-none pr-3 pl-8"
+                        >
+                          <option value="" disabled>-- اختر الموظف المنفذ --</option>
+                          {deptMembers.map(m => (
+                            <option key={m.id} value={m.id}>
+                              👤 {m.name} — {m.role} {m.id === currentMember.id ? '★ (أنت - رئيس القسم)' : ''}
+                            </option>
+                          ))}
+                        </select>
+                        <UserPlus className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      </div>
+                    </div>
 
-              </form>
+                    {/* Step 2: Head Directives */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block text-xs font-bold text-teal-300 flex items-center gap-1.5">
+                          <span className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/40 flex items-center justify-center text-[11px] font-bold">2</span>
+                          <span>توجيهاتك الخاصة وتعليمات العمل للموظف:</span>
+                        </label>
+                        <span className="text-[10px] text-slate-400">ستصل للموظف كتعليمات فنية مباشرة</span>
+                      </div>
+                      <textarea
+                        rows={5}
+                        value={dispatchInstructions}
+                        onChange={(e) => setDispatchInstructions(e.target.value)}
+                        placeholder="اكتب هنا توجيهاتك الفنية وتفاصيل العمل المطلوبة من الموظف بدقة (الزوايا، المقاسات، الملاحظات الخاصة، المواعيد المقترحة)..."
+                        className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700/90 focus:border-teal-400 focus:ring-1 focus:ring-teal-400 text-white placeholder-slate-500 leading-relaxed text-xs resize-none shadow-inner"
+                      />
+                    </div>
+
+                    {/* Success Message */}
+                    {dispatchSuccessMsg && (
+                      <div className="p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold flex items-center gap-2 animate-fadeIn">
+                        <CheckCircle2 className="w-4 h-4 shrink-0" />
+                        <span>{dispatchSuccessMsg}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Step 3: Single Primary Submit Button */}
+                  <div className="flex items-center justify-between gap-3 pt-4 border-t border-slate-800 mt-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedTaskForDispatch(null)}
+                    >
+                      إلغاء
+                    </Button>
+
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      size="md"
+                      disabled={!dispatchMemberId || isSubmittingDispatch}
+                      loading={isSubmittingDispatch}
+                      icon={<Send className="w-4 h-4" />}
+                      className="bg-teal-600 hover:bg-teal-500 text-white font-black px-6 shadow-lg shadow-teal-500/20"
+                    >
+                      {selectedTaskForDispatch.stage.assigned_member_id 
+                        ? '💾 حفظ وتحديث التكليف والتوجيهات' 
+                        : '🚀 إرسال وتكليف المهمة للموظف'}
+                    </Button>
+                  </div>
+
+                </form>
+              </div>
 
             </div>
 

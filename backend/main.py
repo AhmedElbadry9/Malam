@@ -34,27 +34,27 @@ logger = logging.getLogger("malam")
 # Environment-aware CORS origins
 # ---------------------------------------------------------------------------
 _ENV = os.environ.get("APP_ENV", "development").lower()
-_FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
+_FRONTEND_URL = os.environ.get("FRONTEND_URL", "")
 
-if _ENV == "production":
-    ALLOWED_ORIGINS = [_FRONTEND_URL]
-else:
-    # Development: allow typical local dev URLs
-    ALLOWED_ORIGINS = [
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ]
-    if _FRONTEND_URL not in ALLOWED_ORIGINS:
-        ALLOWED_ORIGINS.append(_FRONTEND_URL)
+ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+if _FRONTEND_URL:
+    for url in _FRONTEND_URL.split(","):
+        clean = url.strip()
+        if clean and clean not in ALLOWED_ORIGINS:
+            ALLOWED_ORIGINS.append(clean)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
     Application lifespan manager:
-    Initializes SQLite schemas, runs safe migrations, and ensures database seeding on initial setup.
+    Initializes schemas, runs safe migrations, and ensures database seeding on initial setup.
     """
     Base.metadata.create_all(bind=engine)
     run_migrations()
@@ -76,11 +76,12 @@ app = FastAPI(
 )
 
 # ---------------------------------------------------------------------------
-# CORS — environment-aware (no wildcard with credentials in production)
+# CORS — supports configured frontend URLs and all Vercel deployments
 # ---------------------------------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

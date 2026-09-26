@@ -2,6 +2,9 @@ from database.session import engine
 
 def run_migrations():
     """Safely apply database schema updates for SQLite without wiping existing data."""
+    if engine.dialect.name != "sqlite":
+        return
+
     with engine.connect() as conn:
         try:
             res = conn.exec_driver_sql("PRAGMA table_info(task_stages)").fetchall()
@@ -34,3 +37,4 @@ def run_migrations():
                 conn.commit()
         except Exception as e:
             print(f"Migration notice: {e}")
+

@@ -1,6 +1,9 @@
 import type { Client, Department, TeamMember, SystemKPIs, NewClientPayload, TaskStage, ClientGroupHierarchy, PendingReviewItem, ClientBriefSheetData, AuditLog } from '../types';
 
-const API_BASE = '/api';
+const envApiUrl = import.meta.env.VITE_API_URL;
+const API_BASE = envApiUrl ? `${envApiUrl.replace(/\/+$/, '')}/api` : '/api';
+
+
 
 export interface AuthResponseData {
   user_type: 'admin' | 'manager' | 'head' | 'employee' | 'super_admin';

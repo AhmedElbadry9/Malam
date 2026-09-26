@@ -20,17 +20,60 @@ def get_drive_service():
     if _cached_service is not None:
         return _cached_service
 
-    if not os.path.exists(SERVICE_ACCOUNT_FILE):
-        print(f"Warning: credentials.json not found at {SERVICE_ACCOUNT_FILE}")
+    import json
+    import base64
+
+    creds = None
+
+    # 1. Try from raw JSON string in environment variable (Render / Cloud deployment)
+    env_json = os.environ.get('GOOGLE_SERVICE_ACCOUNT_JSON') or os.environ.get('GOOGLE_CREDENTIALS_JSON')
+    if env_json and env_json.strip():
+        try:
+            info = json.loads(env_json.strip())
+            creds = service_account.Credentials.from_service_account_info(info, scopes=SCOPES)
+            logger.info("Successfully loaded Google Drive credentials from GOOGLE_SERVICE_ACCOUNT_JSON env var.")
+        except Exception as e:
+            logger.error(f"Error loading credentials from GOOGLE_SERVICE_ACCOUNT_JSON: {e}")
+
+    # 2. Try from Base64 encoded environment variable
+    if not creds:
+        env_b64 = os.environ.get('GOOGLE_CREDENTIALS_BASE64') or os.environ.get('GOOGLE_SERVICE_ACCOUNT_BASE64')
+        if env_b64 and env_b64.strip():
+            try:
+                decoded = base64.b64decode(env_b64.strip()).decode('utf-8')
+                info = json.loads(decoded)
+                creds = service_account.Credentials.from_service_account_info(info, scopes=SCOPES)
+                logger.info("Successfully loaded Google Drive credentials from Base64 env var.")
+            except Exception as e:
+                logger.error(f"Error loading credentials from Base64 env var: {e}")
+
+    # 3. Try custom path from GOOGLE_APPLICATION_CREDENTIALS
+    if not creds:
+        custom_path = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')
+        if custom_path and os.path.exists(custom_path):
+            try:
+                creds = service_account.Credentials.from_service_account_file(custom_path, scopes=SCOPES)
+                logger.info(f"Successfully loaded Google Drive credentials from path: {custom_path}")
+            except Exception as e:
+                logger.error(f"Error loading credentials from {custom_path}: {e}")
+
+    # 4. Try local file path (credentials.json)
+    if not creds and os.path.exists(SERVICE_ACCOUNT_FILE):
+        try:
+            creds = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+            logger.info(f"Successfully loaded Google Drive credentials from file: {SERVICE_ACCOUNT_FILE}")
+        except Exception as e:
+            logger.error(f"Error initializing Google Drive client from {SERVICE_ACCOUNT_FILE}: {e}")
+
+    if not creds:
+        logger.warning("Google Drive credentials not found (checked env vars and credentials.json). Drive features will use fallback mock.")
         return None
-        
+
     try:
-        creds = service_account.Credentials.from_service_account_file(
-            SERVICE_ACCOUNT_FILE, scopes=SCOPES)
         _cached_service = build('drive', 'v3', credentials=creds, cache_discovery=False)
         return _cached_service
     except Exception as e:
-        print(f"Error initializing Google Drive client: {e}")
+        logger.error(f"Error building Google Drive client: {e}")
         return None
 
 def share_folder(folder_id: str, email: str, role: str = "reader", send_notification: bool = True) -> dict:

@@ -3,8 +3,8 @@ import {
   Award, CheckCircle2, Clock, FolderGit2, Building2,
   RotateCcw, ExternalLink, ShieldCheck, Users, Search,
   Check, UserCheck, Send, AlertTriangle,
-  Layers, History, UserPlus, Edit, FileText,
-  Globe, Copy
+  Layers, History, Edit, FileText,
+  Globe, Copy, Sparkles
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import type { Client, Department, TeamMember, TaskStage } from '../types';
@@ -59,21 +59,13 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
   const [activeTab, setActiveTab] = useState<'dispatch' | 'my_tasks' | 'review' | 'team'>('dispatch');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Assignment & Briefing Modal State
-  const [selectedStageForAssignment, setSelectedStageForAssignment] = useState<{ client: Client; stage: TaskStage } | null>(null);
-  const [assignmentSelectedMemberId, setAssignmentSelectedMemberId] = useState<number | ''>('');
-  const [assignmentInstructions, setAssignmentInstructions] = useState('');
-  const [isSubmittingAssignment, setIsSubmittingAssignment] = useState(false);
-
-  // Task & Brief Details Modal State
-  const [selectedTaskForDetails, setSelectedTaskForDetails] = useState<{ client: Client; stage: TaskStage } | null>(null);
-  const [editingTaskDesc, setEditingTaskDesc] = useState('');
-  const [detailsSelectedMemberId, setDetailsSelectedMemberId] = useState<number | ''>('');
-  const [isSavingDetailsAssignment, setIsSavingDetailsAssignment] = useState(false);
-  const [assignSuccessMsg, setAssignSuccessMsg] = useState<string | null>(null);
+  // UNIFIED TASK DISPATCH & DIRECTIVES MODAL STATE (Single Hub - No Duplicates)
+  const [selectedTaskForDispatch, setSelectedTaskForDispatch] = useState<{ client: Client; stage: TaskStage } | null>(null);
+  const [dispatchMemberId, setDispatchMemberId] = useState<number | ''>('');
+  const [dispatchInstructions, setDispatchInstructions] = useState('');
+  const [isSubmittingDispatch, setIsSubmittingDispatch] = useState(false);
+  const [dispatchSuccessMsg, setDispatchSuccessMsg] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [isSavingTaskDesc, setIsSavingTaskDesc] = useState(false);
-  const [saveDescSuccess, setSaveDescSuccess] = useState(false);
 
   // Review modal state
   const [selectedReviewStage, setSelectedReviewStage] = useState<{ client: Client; stage: TaskStage } | null>(null);
@@ -109,7 +101,6 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
 
   // Team members under this Head (strictly this department's employees and the head)
   const deptMembers = members.filter(m => {
-    // Exclude system admins and agency managers from department worker pool
     if (m.role_type === 'admin' || m.role_type === 'super_admin' || m.role_type === 'manager') {
       return false;
     }
@@ -120,16 +111,12 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
 
   // Helper to identify direct management tasks that bypass the Head
   const isDirectManagementTask = (stage: TaskStage) => {
-    // If assigned to the Head themselves, it's their direct task
     if (stage.assigned_member_id === currentMember.id) return false;
-    // If dispatched/assigned by this Head, it is a Head-managed task
     if (stage.assigned_by_id === currentMember.id) return false;
 
-    // Check assigner
     const assigner = stage.assigned_by || members.find(m => m.id === stage.assigned_by_id);
     const isAssignedByManagement = assigner && (assigner.role_type === 'admin' || assigner.role_type === 'manager' || assigner.role_type === 'super_admin');
     
-    // If assigned by Admin/Manager directly to a department employee (not this Head), it's a Direct Management task
     return !!isAssignedByManagement;
   };
 
@@ -167,30 +154,6 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
 
   const currentTabTasks = getTabFilteredTasks();
 
-  const handleConfirmAssignment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedStageForAssignment || !assignmentSelectedMemberId) return;
-    try {
-      setIsSubmittingAssignment(true);
-      await onUpdateAssignment(
-        selectedStageForAssignment.client.id,
-        selectedStageForAssignment.stage.id,
-        {
-          assigned_member_id: Number(assignmentSelectedMemberId),
-          head_instructions: assignmentInstructions.trim() || undefined
-        }
-      );
-      setSelectedStageForAssignment(null);
-      setAssignmentInstructions('');
-      setAssignmentSelectedMemberId('');
-    } catch (err) {
-      console.error(err);
-      alert('فشل إسناد المهمة. يرجى المحاولة مجدداً.');
-    } finally {
-      setIsSubmittingAssignment(false);
-    }
-  };
-
   const handleCopyText = (text: string, fieldName: string) => {
     if (!text) return;
     navigator.clipboard.writeText(text);
@@ -198,79 +161,72 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
     setTimeout(() => setCopiedField(null), 2000);
   };
 
-  const handleOpenTaskDetails = (client: Client, stage: TaskStage) => {
-    setSelectedTaskForDetails({ client, stage });
-    setEditingTaskDesc(stage.head_instructions || '');
-    setDetailsSelectedMemberId(stage.assigned_member_id || '');
-    setAssignSuccessMsg(null);
-    setSaveDescSuccess(false);
+  // Open the unified dispatch modal
+  const handleOpenDispatch = (client: Client, stage: TaskStage) => {
+    setSelectedTaskForDispatch({ client, stage });
+    // Default to existing assigned employee or the first available employee if unassigned
+    if (stage.assigned_member_id) {
+      setDispatchMemberId(stage.assigned_member_id);
+    } else {
+      const defaultEmp = deptMembers.find(m => m.id !== currentMember.id);
+      setDispatchMemberId(defaultEmp ? defaultEmp.id : '');
+    }
+    setDispatchInstructions(stage.head_instructions || '');
+    setDispatchSuccessMsg(null);
   };
 
-  const handleSaveDetailsAssignment = async () => {
-    if (!selectedTaskForDetails) return;
+  // Submit the unified dispatch form (Assign + Directives + Status)
+  const handleDispatchSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTaskForDispatch) return;
+
     try {
-      setIsSavingDetailsAssignment(true);
-      const newMemberId = detailsSelectedMemberId !== '' ? Number(detailsSelectedMemberId) : null;
+      setIsSubmittingDispatch(true);
+      const newMemberId = dispatchMemberId !== '' ? Number(dispatchMemberId) : null;
+      const targetStatus = selectedTaskForDispatch.stage.status === 'pending' && newMemberId ? 'in_progress' : undefined;
+
       await onUpdateAssignment(
-        selectedTaskForDetails.client.id,
-        selectedTaskForDetails.stage.id,
+        selectedTaskForDispatch.client.id,
+        selectedTaskForDispatch.stage.id,
         {
           assigned_member_id: newMemberId,
-          head_instructions: editingTaskDesc.trim() || undefined,
+          head_instructions: dispatchInstructions.trim() || undefined,
+          status: targetStatus
         }
       );
-      setSelectedTaskForDetails(prev => prev ? {
+
+      // Local update
+      setSelectedTaskForDispatch(prev => prev ? {
         ...prev,
         stage: {
           ...prev.stage,
           assigned_member_id: newMemberId,
-          head_instructions: editingTaskDesc.trim() || undefined,
+          head_instructions: dispatchInstructions.trim() || undefined,
+          status: (targetStatus as any) || prev.stage.status
         }
       } : null);
+
       const assignedMem = members.find(m => m.id === newMemberId);
-      setAssignSuccessMsg(assignedMem ? `تم إسناد المهمة إلى ${assignedMem.name} بنجاح!` : 'تم تحديث التكليف بنجاح!');
-      confetti({ particleCount: 40, spread: 50, origin: { y: 0.5 } });
-      setTimeout(() => setAssignSuccessMsg(null), 3000);
+      const successText = assignedMem 
+        ? `تم إسناد المهمة وإرسال التوجيهات إلى ${assignedMem.name} بنجاح! 🚀`
+        : 'تم حفظ وتحديث بيانات المهمة بنجاح!';
+      
+      setDispatchSuccessMsg(successText);
+      confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
+
+      // Automatically close modal after smooth confirmation
+      setTimeout(() => {
+        setSelectedTaskForDispatch(null);
+        setDispatchSuccessMsg(null);
+      }, 1200);
+
     } catch (err) {
       console.error(err);
-      alert('فشل إسناد المهمة. يرجى المحاولة مجدداً.');
+      alert('فشل حفظ وتكليف المهمة. يرجى المحاولة مجدداً.');
     } finally {
-      setIsSavingDetailsAssignment(false);
+      setIsSubmittingDispatch(false);
     }
   };
-
-  const handleSaveHeadInstructions = async () => {
-    if (!selectedTaskForDetails) return;
-    try {
-      setIsSavingTaskDesc(true);
-      const newMemberId = detailsSelectedMemberId !== '' ? Number(detailsSelectedMemberId) : (selectedTaskForDetails.stage.assigned_member_id || null);
-      await onUpdateAssignment(
-        selectedTaskForDetails.client.id,
-        selectedTaskForDetails.stage.id,
-        {
-          assigned_member_id: newMemberId,
-          head_instructions: editingTaskDesc.trim() || undefined
-        }
-      );
-      setSelectedTaskForDetails(prev => prev ? {
-        ...prev,
-        stage: {
-          ...prev.stage,
-          assigned_member_id: newMemberId,
-          head_instructions: editingTaskDesc.trim() || undefined
-        }
-      } : null);
-      setSaveDescSuccess(true);
-      setTimeout(() => setSaveDescSuccess(false), 2500);
-    } catch (err) {
-      console.error(err);
-      alert('فشل حفظ توجيهات المهمة. يرجى المحاولة مجدداً.');
-    } finally {
-      setIsSavingTaskDesc(false);
-    }
-  };
-
-
 
   const handleApprove = async (stageId: number) => {
     try {
@@ -356,7 +312,7 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
-              إسناد وتوزيع المهام، فحص واعتماد المخرجات، ومتابعة المهام المسندة إليك شخصياً
+              توزيع وتكليف المهام على الفريق، كتابة التوجيهات الفنية، وفحص واعتماد التسليمات
             </p>
           </div>
         </div>
@@ -388,7 +344,7 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
               onClick={() => setActiveTab('dispatch')}
               className="px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-center cursor-pointer hover:bg-rose-500/20 transition-all"
             >
-              <span className="text-[10px] text-rose-300 block font-medium">تحتاج تعيين</span>
+              <span className="text-[10px] text-rose-300 block font-medium">تحتاج تكليف</span>
               <span className="text-base font-black text-rose-400">{unassignedTasks.length}</span>
             </div>
           )}
@@ -544,10 +500,10 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                 <tr>
                   <th className="p-3.5 text-center">الشركة والمشروع</th>
                   <th className="p-3.5 text-center">المرحلة / المهمة</th>
-                  <th className="p-3.5 text-center">الموظف المسند إليه (Assign)</th>
+                  <th className="p-3.5 text-center">الموظف المسند إليه</th>
                   <th className="p-3.5 text-center">الحالة</th>
                   <th className="p-3.5 text-center">الأولوية</th>
-                  <th className="p-3.5 text-center">إجراءات</th>
+                  <th className="p-3.5 text-center">الإجراء والتكليف</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 text-slate-300">
@@ -564,15 +520,20 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                   currentTabTasks.map(({ client, stage }) => {
                     const isUnassigned = !stage.assigned_member_id;
                     const isAssignedToMe = stage.assigned_member_id === currentMember.id;
+                    const assignedMem = deptMembers.find(m => m.id === stage.assigned_member_id);
 
                     return (
-                      <tr key={stage.id} className={`hover:bg-slate-800/30 transition-colors ${isUnassigned || isAssignedToMe ? 'bg-amber-500/[0.03]' : ''}`}>
+                      <tr 
+                        key={stage.id} 
+                        className={`hover:bg-slate-800/40 transition-colors ${isUnassigned ? 'bg-amber-500/[0.03]' : ''}`}
+                      >
+                        {/* Company & Client */}
                         <td className="p-3.5 text-center">
                           <button
                             type="button"
-                            onClick={() => handleOpenTaskDetails(client, stage)}
+                            onClick={() => handleOpenDispatch(client, stage)}
                             className="group cursor-pointer hover:bg-white/5 p-2 rounded-xl transition-all block w-full text-center"
-                            title="عرض تفاصيل المهمة والمتجر"
+                            title="فتح نافذة التكليف والتوجيهات"
                           >
                             <div className="font-bold text-white text-sm group-hover:text-teal-300 flex items-center justify-center gap-1.5">
                               <span>{client.company_name}</span>
@@ -581,125 +542,120 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                             <div className="text-[11px] text-slate-400 mt-0.5">{client.name}</div>
                           </button>
                         </td>
+
+                        {/* Stage Name & Indicators */}
                         <td className="p-3.5 text-center">
                           <div className="flex flex-col items-center justify-center gap-1.5">
-                            <span className="text-white text-xs font-bold">{stage.stage_name}</span>
+                            <span 
+                              onClick={() => handleOpenDispatch(client, stage)}
+                              className="text-white text-xs font-bold hover:text-teal-300 cursor-pointer transition-colors"
+                            >
+                              {stage.stage_name}
+                            </span>
                             <div className="flex items-center justify-center gap-1.5 flex-wrap">
                               {stage.head_instructions && (
                                 <span
-                                  onClick={() => handleOpenTaskDetails(client, stage)}
-                                  className="inline-flex items-center gap-1 text-[10px] text-teal-300 bg-teal-500/15 hover:bg-teal-500/25 border border-teal-500/30 px-2 py-0.5 rounded-full cursor-pointer transition-colors"
+                                  onClick={() => handleOpenDispatch(client, stage)}
+                                  className="inline-flex items-center gap-1 text-[10px] text-teal-300 bg-teal-500/15 border border-teal-500/30 px-2 py-0.5 rounded-full cursor-pointer hover:bg-teal-500/25 transition-colors"
                                   title={stage.head_instructions}
                                 >
-                                  ✍️ توجيهاتي للموظف
+                                  ✍️ توجيهاتك مضافة
                                 </span>
                               )}
                               {(stage.description || client.request_details) && (
                                 <span
-                                  onClick={() => handleOpenTaskDetails(client, stage)}
-                                  className="inline-flex items-center gap-1 text-[10px] text-indigo-300 bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 px-2 py-0.5 rounded-full cursor-pointer transition-colors"
+                                  onClick={() => handleOpenDispatch(client, stage)}
+                                  className="inline-flex items-center gap-1 text-[10px] text-indigo-300 bg-indigo-500/15 border border-indigo-500/30 px-2 py-0.5 rounded-full cursor-pointer hover:bg-indigo-500/25 transition-colors"
                                   title={stage.description || client.request_details || ''}
                                 >
-                                  📋 توجيهات الإدارة
-                                </span>
-                              )}
-                              {(isUnassigned || isAssignedToMe) && (
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                                  بانتظار التعيين
+                                  📋 ملاحظات الإدارة
                                 </span>
                               )}
                             </div>
                           </div>
                         </td>
+
+                        {/* Assigned Employee */}
                         <td className="p-3.5 text-center">
                           <div className="flex items-center justify-center">
-                            {(() => {
-                              const assignedMem = deptMembers.find(m => m.id === stage.assigned_member_id);
-                              const needsAssignment = isUnassigned || isAssignedToMe || !assignedMem;
-
-                              if (needsAssignment) {
-                                return (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setSelectedStageForAssignment({ client, stage });
-                                      const defaultEmp = deptMembers.find(m => m.id !== currentMember.id);
-                                      setAssignmentSelectedMemberId(defaultEmp ? defaultEmp.id : '');
-                                      setAssignmentInstructions(stage.head_instructions || '');
-                                    }}
-                                    className="px-3.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 hover:text-amber-200 border border-amber-500/30 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
-                                  >
-                                    <UserPlus className="w-3.5 h-3.5" />
-                                    <span>تعيين موظف</span>
-                                  </button>
-                                );
-                              }
-
-                              return (
-                                <div className="flex items-center gap-2 bg-slate-900/90 border border-slate-700/80 px-3 py-1.5 rounded-xl shadow-inner">
-                                  <div className="text-right">
-                                    <div className="text-xs font-bold text-white flex items-center gap-1">
-                                      <span>👤 {assignedMem.name}</span>
-                                    </div>
-                                    <div className="text-[10px] text-slate-400">{assignedMem.role}</div>
+                            {assignedMem ? (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenDispatch(client, stage)}
+                                className="flex items-center gap-2 bg-slate-900/90 border border-slate-750 hover:border-teal-500/50 px-3 py-1.5 rounded-xl shadow-sm text-right transition-all cursor-pointer group"
+                                title="اضغط لتغيير الموظف أو تعديل التوجيهات"
+                              >
+                                <div>
+                                  <div className="text-xs font-bold text-white group-hover:text-teal-300 flex items-center gap-1">
+                                    <span>👤 {assignedMem.name}</span>
+                                    {isAssignedToMe && <span className="text-[10px] text-indigo-400">(أنت)</span>}
                                   </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setSelectedStageForAssignment({ client, stage });
-                                      setAssignmentSelectedMemberId(assignedMem.id);
-                                      setAssignmentInstructions(stage.head_instructions || '');
-                                    }}
-                                    className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
-                                    title="تحويل لموظف آخر أو تعديل التوجيهات"
-                                  >
-                                    <Edit className="w-3.5 h-3.5 text-indigo-400" />
-                                  </button>
+                                  <div className="text-[10px] text-slate-400">{assignedMem.role}</div>
                                 </div>
-                              );
-                            })()}
+                                <Edit className="w-3.5 h-3.5 text-slate-500 group-hover:text-teal-400 transition-colors" />
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenDispatch(client, stage)}
+                                className="px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-sm animate-pulse"
+                                title="اضغط لتكليف موظف فوراً"
+                              >
+                                <Sparkles className="w-3.5 h-3.5" />
+                                <span>بانتظار التكليف</span>
+                              </button>
+                            )}
                           </div>
                         </td>
+
+                        {/* Status */}
                         <td className="p-3.5 text-center">
                           <div className="flex justify-center">
                             <StatusBadge status={stage.status} size="sm" />
                           </div>
                         </td>
+
+                        {/* Priority */}
                         <td className="p-3.5 text-center">
                           <div className="flex justify-center">
                             <PriorityBadge priority={client.priority} />
                           </div>
                         </td>
+
+                        {/* Action Column - Consolidated & Professional */}
                         <td className="p-3.5 text-center">
                           <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
+                            {/* Primary Unified Dispatch Button */}
                             <Button
-                              variant="ghost"
+                              variant={isUnassigned ? "primary" : "secondary"}
                               size="sm"
-                              icon={<FileText className="w-3.5 h-3.5 text-teal-400" />}
-                              onClick={() => handleOpenTaskDetails(client, stage)}
-                              title="عرض وتعديل توجيهات المهمة وبيانات المتجر"
+                              icon={isUnassigned ? <Send className="w-3.5 h-3.5" /> : <Edit className="w-3.5 h-3.5 text-teal-400" />}
+                              onClick={() => handleOpenDispatch(client, stage)}
+                              className={isUnassigned ? "bg-teal-600 hover:bg-teal-500 text-white font-bold" : "font-bold text-xs"}
                             >
-                              التوجيهات والتفاصيل
+                              {isUnassigned ? 'توزيع وتكليف' : 'تعديل التكليف'}
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              icon={<FolderGit2 className="w-3.5 h-3.5 text-amber-400" />}
+
+                            {/* Drive Folder Button */}
+                            <button
+                              type="button"
                               onClick={() => onOpenDriveModal(client)}
+                              className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-amber-500/20 text-slate-400 hover:text-amber-300 border border-slate-700/60 hover:border-amber-500/30 transition-all cursor-pointer"
                               title="فتح مجلد جوجل درايف"
                             >
-                              ملفات Drive
-                            </Button>
+                              <FolderGit2 className="w-3.5 h-3.5" />
+                            </button>
+
+                            {/* History Modal Button */}
                             {onOpenHistoryModal && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                icon={<History className="w-3.5 h-3.5 text-indigo-400" />}
+                              <button
+                                type="button"
                                 onClick={() => onOpenHistoryModal(stage, client)}
-                                title="عرض سجل دورة حياة المهمة وتتبع التحويلات"
+                                className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-indigo-500/20 text-slate-400 hover:text-indigo-300 border border-slate-700/60 hover:border-indigo-500/30 transition-all cursor-pointer"
+                                title="عرض سجل دورة حياة المهمة"
                               >
-                                سجل الدورة
-                              </Button>
+                                <History className="w-3.5 h-3.5" />
+                              </button>
                             )}
                           </div>
                         </td>
@@ -759,45 +715,45 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                     )}
                   </CardBody>
 
-                    <div className="p-3 bg-slate-950/40 border-t border-slate-800 flex items-center justify-between gap-2">
-                      {stage.status !== 'completed' ? (
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          icon={<Send className="w-3.5 h-3.5" />}
-                          className="flex-1"
-                          onClick={() => handleOpenSubmitModal({ client, stage })}
-                        >
-                          تسليم العمل للمراجعة
-                        </Button>
-                      ) : (
-                        <span className="text-xs text-emerald-400 font-bold flex items-center gap-1">
-                          <Check className="w-3.5 h-3.5" />
-                          <span>مكتمل ومعتمد</span>
-                        </span>
-                      )}
-
-                      {onOpenHistoryModal && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          icon={<History className="w-3.5 h-3.5 text-indigo-400" />}
-                          onClick={() => onOpenHistoryModal(stage, client)}
-                          title="عرض سجل دورة حياة المهمة"
-                        >
-                          السجل
-                        </Button>
-                      )}
-
+                  <div className="p-3 bg-slate-950/40 border-t border-slate-800 flex items-center justify-between gap-2">
+                    {stage.status !== 'completed' ? (
                       <Button
-                        variant="secondary"
+                        variant="primary"
                         size="sm"
-                        icon={<FolderGit2 className="w-3.5 h-3.5 text-amber-400" />}
-                        onClick={() => onOpenDriveModal(client)}
+                        icon={<Send className="w-3.5 h-3.5" />}
+                        className="flex-1"
+                        onClick={() => handleOpenSubmitModal({ client, stage })}
                       >
-                        Drive
+                        تسليم العمل للمراجعة
                       </Button>
-                    </div>
+                    ) : (
+                      <span className="text-xs text-emerald-400 font-bold flex items-center gap-1">
+                        <Check className="w-3.5 h-3.5" />
+                        <span>مكتمل ومعتمد</span>
+                      </span>
+                    )}
+
+                    {onOpenHistoryModal && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        icon={<History className="w-3.5 h-3.5 text-indigo-400" />}
+                        onClick={() => onOpenHistoryModal(stage, client)}
+                        title="عرض سجل دورة حياة المهمة"
+                      >
+                        السجل
+                      </Button>
+                    )}
+
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      icon={<FolderGit2 className="w-3.5 h-3.5 text-amber-400" />}
+                      onClick={() => onOpenDriveModal(client)}
+                    >
+                      Drive
+                    </Button>
+                  </div>
                 </Card>
               ))}
             </div>
@@ -1062,364 +1018,214 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
         </Modal>
       )}
 
-      {/* Assignment & Briefing Modal */}
-      {selectedStageForAssignment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-lg bg-slate-900 border border-slate-750 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
-            {/* Header */}
-            <div className="px-6 py-4 border-b border-slate-800 bg-slate-950/60 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-teal-500/15 border border-teal-500/30 text-teal-400 flex items-center justify-center font-bold">
-                  <UserPlus className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-white">إسناد وتوجيه المهمة للموظف</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    {selectedStageForAssignment.client.company_name} • <span className="text-teal-300 font-semibold">{selectedStageForAssignment.stage.stage_name}</span>
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedStageForAssignment(null)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleConfirmAssignment} className="p-6 space-y-4 text-xs">
-              {/* Management brief context if exists */}
-              {(selectedStageForAssignment.stage.description || selectedStageForAssignment.client.request_details) && (
-                <div className="bg-slate-950/60 border-r-2 border-indigo-500 rounded-xl p-3 border border-slate-800 space-y-1">
-                  <span className="text-[11px] font-bold text-indigo-300 flex items-center gap-1.5">
-                    <FileText className="w-3.5 h-3.5" />
-                    <span>توجيهات ومتطلبات الإدارة (مرجع):</span>
-                  </span>
-                  <p className="text-xs text-slate-300 leading-relaxed max-h-24 overflow-y-auto whitespace-pre-wrap">
-                    {selectedStageForAssignment.stage.description || selectedStageForAssignment.client.request_details}
-                  </p>
-                </div>
-              )}
-
-              <div>
-                <label className="block font-bold text-slate-200 mb-1.5">
-                  1. اختر الموظف المنفذ من فريق قسمك:
-                </label>
-                <select
-                  required
-                  value={assignmentSelectedMemberId}
-                  onChange={(e) => setAssignmentSelectedMemberId(e.target.value ? Number(e.target.value) : '')}
-                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-700/80 text-white font-bold text-xs focus:outline-none focus:border-teal-500 cursor-pointer"
-                >
-                  <option value="" disabled>-- اختر الموظف المنفذ --</option>
-                  {deptMembers.filter(m => m.id !== currentMember.id).map(m => (
-                    <option key={m.id} value={m.id}>
-                      👤 {m.name} ({m.role})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block font-bold text-teal-300 flex items-center gap-1.5">
-                    <span>✍️</span>
-                    <span>2. توجيهاتك الخاصة للموظف:</span>
-                  </label>
-                  <span className="text-[10px] text-slate-400">ستصل للموظف كتعليمات فنية منك</span>
-                </div>
-                <textarea
-                  rows={3}
-                  value={assignmentInstructions}
-                  onChange={(e) => setAssignmentInstructions(e.target.value)}
-                  placeholder="اكتب هنا توجيهاتك وتفاصيل التنفيذ المطلوبة من الموظف..."
-                  className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700/80 focus:border-teal-400 text-white placeholder-slate-500 leading-relaxed text-xs resize-none"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-800">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setSelectedStageForAssignment(null)}
-                >
-                  إلغاء
-                </Button>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  size="sm"
-                  disabled={!assignmentSelectedMemberId || isSubmittingAssignment}
-                  loading={isSubmittingAssignment}
-                  icon={<Send className="w-3.5 h-3.5" />}
-                  className="bg-teal-600 hover:bg-teal-500 text-white"
-                >
-                  تأكيد التكليف وإرسال المهمة
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Task Details & Brief Directives Modal */}
-      {selectedTaskForDetails && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm animate-fadeIn">
-          <div className="w-full max-w-4xl bg-slate-900 border border-slate-750 rounded-2xl shadow-2xl flex flex-col max-h-[88vh] overflow-hidden">
+      {/* ========================================================================= */}
+      {/* 🚀 THE UNIFIED TASK DISPATCH & DIRECTIVES MODAL (Single Consolidated Hub)  */}
+      {/* ========================================================================= */}
+      {selectedTaskForDispatch && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+          <div className="w-full max-w-3xl bg-slate-900 border border-slate-750 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
             
-            {/* 1. Modal Header - Spacious & Clean */}
-            <div className="px-6 py-5 border-b border-slate-800 bg-slate-950/90 flex items-start justify-between gap-4 shrink-0">
+            {/* Header */}
+            <div className="px-6 py-4.5 border-b border-slate-800 bg-slate-950/90 flex items-start justify-between gap-4 shrink-0">
               <div className="space-y-1.5 min-w-0">
-                <div className="flex items-center gap-2.5 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="px-2.5 py-0.5 rounded-md text-xs font-bold bg-teal-500/15 text-teal-300 border border-teal-500/30">
-                    {selectedTaskForDetails.client.platform || 'زد'}
+                    {selectedTaskForDispatch.client.platform || 'زد'}
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-md text-xs font-bold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
+                    {selectedTaskForDispatch.client.package_name || selectedTaskForDispatch.client.service_type || 'باقة متكاملة'}
                   </span>
                   <h2 className="text-base sm:text-lg font-black text-white leading-snug">
-                    {selectedTaskForDetails.stage.stage_name}
+                    {selectedTaskForDispatch.stage.stage_name}
                   </h2>
                 </div>
                 <p className="text-xs text-slate-400 flex items-center gap-2">
                   <Building2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                  <span className="text-slate-200 font-bold">{selectedTaskForDetails.client.company_name}</span>
+                  <span className="text-slate-200 font-bold">{selectedTaskForDispatch.client.company_name}</span>
                   <span className="text-slate-600">•</span>
-                  <span>العميل: {selectedTaskForDetails.client.name}</span>
+                  <span>العميل: {selectedTaskForDispatch.client.name}</span>
                 </p>
               </div>
 
-              <div className="flex items-center gap-2.5 shrink-0 pt-0.5">
-                <StatusBadge status={selectedTaskForDetails.stage.status} size="sm" />
-                <PriorityBadge priority={selectedTaskForDetails.client.priority} />
+              <div className="flex items-center gap-2 shrink-0 pt-0.5">
+                <StatusBadge status={selectedTaskForDispatch.stage.status} size="sm" />
+                <PriorityBadge priority={selectedTaskForDispatch.client.priority} />
                 <button
                   type="button"
-                  onClick={() => setSelectedTaskForDetails(null)}
-                  className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer text-sm font-bold ml-1"
+                  onClick={() => setSelectedTaskForDispatch(null)}
+                  className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer text-sm font-bold mr-1"
                 >
                   ✕
                 </button>
               </div>
             </div>
 
-            {/* 2. Modal Body - Clean 2-Column Responsive Layout */}
-            <div className="p-6 overflow-y-auto flex-1 grid grid-cols-1 md:grid-cols-12 gap-6 bg-slate-900">
+            {/* Scrollable Body */}
+            <div className="p-6 overflow-y-auto flex-1 space-y-5 bg-slate-900">
               
-              {/* Main Column: Instructions & Notes (7 / 12) */}
-              <div className="md:col-span-7 space-y-5">
-                
-                {/* Admin Management Brief */}
-                <div className="rounded-xl bg-slate-950/60 border border-slate-800 p-4 space-y-2">
-                  <div className="flex items-center gap-2 text-xs font-bold text-indigo-300">
-                    <FileText className="w-4 h-4 text-indigo-400" />
-                    <span>توجيهات ومتطلبات الإدارة (مرجع للاطلاع):</span>
-                  </div>
-                  <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap font-sans">
-                    {selectedTaskForDetails.stage.description || selectedTaskForDetails.client.request_details || (
-                      <span className="text-slate-500 italic text-[11px]">لا توجد متطلبات أو ملاحظات إضافية مسجلة من الإدارة على هذه المرحلة.</span>
-                    )}
-                  </p>
-                </div>
-
-                {/* Head Instructions to Employee */}
-                <div className="rounded-xl bg-slate-950/60 border border-teal-500/25 p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-teal-300 flex items-center gap-1.5">
-                      <span>✍️</span>
-                      <span>توجيهات رئيس القسم للموظف:</span>
-                    </label>
-                    {selectedTaskForDetails.stage.head_instructions && (
-                      <span className="text-[10px] font-bold text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">
-                        محدثة
-                      </span>
-                    )}
-                  </div>
-
-                  <textarea
-                    rows={4}
-                    value={editingTaskDesc}
-                    onChange={(e) => setEditingTaskDesc(e.target.value)}
-                    placeholder="اكتب هنا توجيهاتك وتفاصيل التنفيذ الفنية للموظف..."
-                    className="w-full text-xs leading-relaxed bg-slate-900 border border-slate-700/80 focus:border-teal-400 focus:ring-1 focus:ring-teal-400 rounded-xl p-3 text-slate-100 placeholder:text-slate-500 resize-none outline-none"
-                  />
-
-                  <div className="flex items-center justify-between pt-1">
-                    {saveDescSuccess ? (
-                      <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5 animate-fadeIn">
-                        <Check className="w-4 h-4" />
-                        <span>تم حفظ التوجيهات بنجاح!</span>
-                      </span>
-                    ) : (
-                      <span className="text-[11px] text-slate-500">
-                        تظهر هذه التوجيهات للموظف المنفذ في واجهته
-                      </span>
-                    )}
-
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="primary"
-                      onClick={handleSaveHeadInstructions}
-                      disabled={isSavingTaskDesc}
-                      loading={isSavingTaskDesc}
-                      className="bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs px-4"
+              {/* 1. Quick Client & Store Bar */}
+              <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-4 flex-wrap">
+                  {selectedTaskForDispatch.client.website_url && (
+                    <a
+                      href={selectedTaskForDispatch.client.website_url.startsWith('http') ? selectedTaskForDispatch.client.website_url : `https://${selectedTaskForDispatch.client.website_url}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-cyan-400 hover:underline font-mono flex items-center gap-1 font-bold"
                     >
-                      حفظ التوجيهات
-                    </Button>
-                  </div>
-                </div>
+                      <Globe className="w-3.5 h-3.5" />
+                      <span>رابط المتجر ↗</span>
+                    </a>
+                  )}
 
-              </div>
-
-              {/* Sidebar Column: Assignment & Details (5 / 12) */}
-              <div className="md:col-span-5 space-y-4">
-                
-                {/* Quick Assign Box */}
-                <div className="rounded-xl bg-slate-950/60 border border-slate-800 p-4 space-y-3">
-                  <span className="text-xs font-bold text-white block">👤 الموظف المكلف بالعمل</span>
-                  
-                  <div className="space-y-2">
-                    <select
-                      value={detailsSelectedMemberId}
-                      onChange={(e) => setDetailsSelectedMemberId(e.target.value ? Number(e.target.value) : '')}
-                      className="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white font-bold text-xs focus:outline-none focus:border-teal-400 cursor-pointer"
-                    >
-                      <option value="">-- اختر موظفاً من القسم --</option>
-                      {deptMembers.map(m => (
-                        <option key={m.id} value={m.id}>
-                          👤 {m.name} ({m.role}) {m.id === currentMember.id ? '★ أنت' : ''}
-                        </option>
-                      ))}
-                    </select>
-
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="primary"
-                      onClick={handleSaveDetailsAssignment}
-                      disabled={isSavingDetailsAssignment || detailsSelectedMemberId === (selectedTaskForDetails.stage.assigned_member_id || '')}
-                      loading={isSavingDetailsAssignment}
-                      className="w-full bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold shadow-sm"
-                    >
-                      {selectedTaskForDetails.stage.assigned_member_id ? 'تحديث وتثبيت التكليف' : 'إسناد المهمة للموظف'}
-                    </Button>
-
-                    {assignSuccessMsg && (
-                      <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 text-xs font-bold flex items-center gap-1.5 animate-fadeIn">
-                        <Check className="w-3.5 h-3.5 shrink-0" />
-                        <span>{assignSuccessMsg}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Clean Property List */}
-                <div className="rounded-xl bg-slate-950/60 border border-slate-800 p-4 space-y-2.5 text-xs">
-                  <span className="text-xs font-bold text-white block pb-1 border-b border-slate-800">
-                    تفاصيل المتجر والطلب
-                  </span>
-
-                  <div className="flex items-center justify-between py-1 border-b border-slate-850">
-                    <span className="text-slate-400 text-xs">المنصة:</span>
-                    <span className="text-slate-200 font-bold bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
-                      {selectedTaskForDetails.client.platform || 'زد'}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between py-1 border-b border-slate-850">
-                    <span className="text-slate-400 text-xs">الباقة / الخدمة:</span>
-                    <span className="text-amber-300 font-bold">
-                      {selectedTaskForDetails.client.package_name || selectedTaskForDetails.client.service_type || 'باقة متكاملة'}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between py-1 border-b border-slate-850">
-                    <span className="text-slate-400 text-xs">إيميل الوكالة:</span>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-indigo-300 font-mono text-[11px] select-all max-w-[140px] truncate">
-                        {selectedTaskForDetails.client.agency_email || 'غير مسجل'}
-                      </span>
-                      {selectedTaskForDetails.client.agency_email && (
-                        <button
-                          type="button"
-                          onClick={() => handleCopyText(selectedTaskForDetails.client.agency_email || '', 'email')}
-                          className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer"
-                          title="نسخ الإيميل"
-                        >
-                          {copiedField === 'email' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between py-1 border-b border-slate-850">
-                    <span className="text-slate-400 text-xs">رقم الهاتف:</span>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-slate-200 font-mono text-[11px]">
-                        {selectedTaskForDetails.client.phone || 'غير مسجل'}
-                      </span>
-                      {selectedTaskForDetails.client.phone && (
-                        <button
-                          type="button"
-                          onClick={() => handleCopyText(selectedTaskForDetails.client.phone || '', 'phone')}
-                          className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer"
-                          title="نسخ الهاتف"
-                        >
-                          {copiedField === 'phone' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {selectedTaskForDetails.client.website_url && (
-                    <div className="flex items-center justify-between pt-1">
-                      <span className="text-slate-400 text-xs">رابط المتجر:</span>
-                      <a
-                        href={selectedTaskForDetails.client.website_url.startsWith('http') ? selectedTaskForDetails.client.website_url : `https://${selectedTaskForDetails.client.website_url}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-cyan-400 hover:underline font-mono text-xs flex items-center gap-1 font-bold"
+                  {selectedTaskForDispatch.client.agency_email && (
+                    <div className="flex items-center gap-1 text-slate-300">
+                      <span className="text-slate-500">إيميل الوكالة:</span>
+                      <span className="text-indigo-300 font-mono select-all">{selectedTaskForDispatch.client.agency_email}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyText(selectedTaskForDispatch.client.agency_email || '', 'email')}
+                        className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                        title="نسخ الإيميل"
                       >
-                        <Globe className="w-3 h-3" />
-                        <span>زيارة المتجر ↗</span>
-                      </a>
+                        {copiedField === 'email' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                      </button>
+                    </div>
+                  )}
+
+                  {selectedTaskForDispatch.client.phone && (
+                    <div className="flex items-center gap-1 text-slate-300">
+                      <span className="text-slate-500">الهاتف:</span>
+                      <span className="text-slate-200 font-mono select-all">{selectedTaskForDispatch.client.phone}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyText(selectedTaskForDispatch.client.phone || '', 'phone')}
+                        className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                        title="نسخ الهاتف"
+                      >
+                        {copiedField === 'phone' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                      </button>
                     </div>
                   )}
                 </div>
 
+                {/* Quick actions in intel bar */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    icon={<FolderGit2 className="w-3.5 h-3.5 text-amber-400" />}
+                    onClick={() => onOpenDriveModal(selectedTaskForDispatch.client)}
+                  >
+                    ملفات Drive
+                  </Button>
+                  {onOpenHistoryModal && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={<History className="w-3.5 h-3.5 text-indigo-400" />}
+                      onClick={() => onOpenHistoryModal(selectedTaskForDispatch.stage, selectedTaskForDispatch.client)}
+                    >
+                      السجل
+                    </Button>
+                  )}
+                </div>
               </div>
 
-            </div>
+              {/* 2. Management Brief Reference (مرجع الإدارة) */}
+              {(selectedTaskForDispatch.stage.description || selectedTaskForDispatch.client.request_details) && (
+                <div className="rounded-xl bg-indigo-950/20 border border-indigo-500/30 p-4 space-y-1.5">
+                  <div className="flex items-center gap-2 text-xs font-bold text-indigo-300">
+                    <FileText className="w-4 h-4 text-indigo-400" />
+                    <span>توجيهات ومتطلبات الإدارة العامة (مرجع للاطلاع):</span>
+                  </div>
+                  <p className="text-xs text-slate-200 leading-relaxed whitespace-pre-wrap font-sans">
+                    {selectedTaskForDispatch.stage.description || selectedTaskForDispatch.client.request_details}
+                  </p>
+                </div>
+              )}
 
-            {/* 3. Modal Footer */}
-            <div className="px-6 py-4 border-t border-slate-800 bg-slate-950/90 flex items-center justify-between shrink-0 text-xs">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  icon={<FolderGit2 className="w-3.5 h-3.5 text-amber-400" />}
-                  onClick={() => onOpenDriveModal(selectedTaskForDetails.client)}
-                >
-                  ملفات Drive
-                </Button>
-                {onOpenHistoryModal && (
+              {/* 3. The Core Dispatch & Directives Form */}
+              <form onSubmit={handleDispatchSubmit} className="space-y-4 pt-1">
+                
+                {/* Step 1: Select Employee */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/40 flex items-center justify-center text-[11px] font-bold">1</span>
+                      <span>اختر الموظف المنفذ من فريق قسمك:</span>
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-normal">الموظف الذي سينفذ هذه المرحلة</span>
+                  </label>
+                  <select
+                    required
+                    value={dispatchMemberId}
+                    onChange={(e) => setDispatchMemberId(e.target.value ? Number(e.target.value) : '')}
+                    className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700/90 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-white font-bold text-xs cursor-pointer shadow-inner"
+                  >
+                    <option value="" disabled>-- اختر الموظف المنفذ --</option>
+                    {deptMembers.map(m => (
+                      <option key={m.id} value={m.id}>
+                        👤 {m.name} ({m.role}) {m.id === currentMember.id ? '★ أنت (رئيس القسم)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Step 2: Head Directives */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold text-teal-300 flex items-center gap-1.5">
+                      <span className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/40 flex items-center justify-center text-[11px] font-bold">2</span>
+                      <span>توجيهاتك الخاصة وتعليمات العمل للموظف:</span>
+                    </label>
+                    <span className="text-[11px] text-slate-400">ستصل للموظف كتعليمات فنية مباشرة</span>
+                  </div>
+                  <textarea
+                    rows={4}
+                    value={dispatchInstructions}
+                    onChange={(e) => setDispatchInstructions(e.target.value)}
+                    placeholder="اكتب هنا توجيهاتك الفنية وتفاصيل العمل المطلوبة من الموظف بدقة (الزوايا، المقاسات، الملاحظات الخاصة، المواعيد)..."
+                    className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700/90 focus:border-teal-400 focus:ring-1 focus:ring-teal-400 text-white placeholder-slate-500 leading-relaxed text-xs resize-none shadow-inner"
+                  />
+                </div>
+
+                {/* Success Message */}
+                {dispatchSuccessMsg && (
+                  <div className="p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold flex items-center gap-2 animate-fadeIn">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <span>{dispatchSuccessMsg}</span>
+                  </div>
+                )}
+
+                {/* Step 3: Single Primary Submit Button */}
+                <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-800">
                   <Button
+                    type="button"
                     variant="ghost"
                     size="sm"
-                    icon={<History className="w-3.5 h-3.5 text-indigo-400" />}
-                    onClick={() => onOpenHistoryModal(selectedTaskForDetails.stage, selectedTaskForDetails.client)}
+                    onClick={() => setSelectedTaskForDispatch(null)}
                   >
-                    سجل الدورة
+                    إلغاء
                   </Button>
-                )}
-              </div>
 
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setSelectedTaskForDetails(null)}
-              >
-                إغلاق
-              </Button>
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    size="md"
+                    disabled={!dispatchMemberId || isSubmittingDispatch}
+                    loading={isSubmittingDispatch}
+                    icon={<Send className="w-4 h-4" />}
+                    className="bg-teal-600 hover:bg-teal-500 text-white font-black px-6 shadow-lg shadow-teal-500/20"
+                  >
+                    {selectedTaskForDispatch.stage.assigned_member_id 
+                      ? '💾 حفظ وتحديث التكليف والتوجيهات' 
+                      : '🚀 إرسال وتكليف المهمة للموظف'}
+                  </Button>
+                </div>
+
+              </form>
+
             </div>
 
           </div>
@@ -1429,5 +1235,3 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
     </div>
   );
 };
-
-

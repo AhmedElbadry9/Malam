@@ -1,0 +1,686 @@
+from datetime import datetime, timedelta
+from database import SessionLocal, engine, Base
+import models
+
+def sync_member_departments(target_session=None):
+    db = target_session if target_session is not None else SessionLocal()
+    should_close = target_session is None
+    try:
+        members = db.query(models.TeamMember).all()
+        for m in members:
+            if m.department_id and len(m.departments) == 0:
+                dept = db.get(models.Department, m.department_id)
+                if dept:
+                    m.departments.append(dept)
+        db.commit()
+    except Exception as e:
+        print(f"Error syncing member departments: {e}")
+    finally:
+        if should_close:
+            db.close()
+
+def seed_database(target_session=None):
+    db = target_session if target_session is not None else SessionLocal()
+    should_close = target_session is None
+
+    # Drop existing data for clean re-seed
+    db.query(models.AuditLog).delete()
+    db.query(models.DriveFolderItem).delete()
+    db.query(models.TaskStage).delete()
+    db.query(models.Client).delete()
+    db.query(models.member_departments).delete()
+    db.query(models.TeamMember).delete()
+    db.query(models.Department).delete()
+    db.commit()
+
+    print("Seeding database with pristine, realistic Agency data...")
+
+    # 1. Official 7 Departments with Roles (الوظائف) and Services/Tasks (المهام)
+    deps_data = [
+        {
+            "name_ar": "قسم المحتوى والسوشيال ميديا",
+            "name_en": "Social Media & Content",
+            "code": "SOCIAL_CONTENT",
+            "icon": "Megaphone",
+            "color": "#8b5cf6",
+            "description": "كتابة المحتوى الإعلاني، خطط السوشيال ميديا، التدقيق اللغوي ومراجعة الجودة، وإدارة الحسابات والتفاعل.",
+            "roles": [
+                "كاتب محتوى إعلاني وتسويقي (Copywriter)",
+                "كاتب محتوى سوشيال ميديا (Social Media Content Creator)",
+                "مصحح لغوي ومراجع جودة (Proofreader & QA)",
+                "مدير حسابات سوشيال ميديا (Account Manager)",
+                "مصمم جرافيك سوشيال ميديا",
+                "مسؤول جدولة ونشر"
+            ],
+            "services": [
+                "نصوص الإعلانات الممولة وصفحات الهبوط (24-48 ساعة)",
+                "إعداد وتطوير خطة المحتوى الشهرية والريلز",
+                "مراجعة وتدقيق الجودة اللغوية للنصوص",
+                "إدارة النشر والتفاعل اليومي على الحسابات"
+            ]
+        },
+        {
+            "name_ar": "قسم الإنتاج المرئي والمسموع",
+            "name_en": "Visual & Audio Production",
+            "code": "PRODUCTION",
+            "icon": "Camera",
+            "color": "#f59e0b",
+            "description": "التصوير الميداني والإعلاني، المونتاج وتصحيح الألوان، كتابة السيناريو، التصوير بالدرون، والتعليق الصوتي.",
+            "roles": [
+                "مصور فيديو / مخرج (Videographer / Director)",
+                "كاتب سيناريو (Scriptwriter)",
+                "مونتير فيديو (Video Editor)",
+                "مشغل درون معتمد (Drone Operator)",
+                "فنان تعليق صوتي (Voice Over)",
+                "مصور فوتوغرافي إعلاني"
+            ],
+            "services": [
+                "تصوير ميداني وجلسات تصوير منتجات 4K",
+                "كتابة السيناريو وبناء لوحة القصة (Storyboard)",
+                "مونتاج وقص وتعديل ألوان ومؤثرات الفيديو (3-5 أيام)",
+                "تصوير جوي بالدرون للمواقع والفعاليات",
+                "تسجيل تعليق صوتي إعلاني احترافي (1-2 يوم)"
+            ]
+        },
+        {
+            "name_ar": "قسم التصميم والهوية البصرية",
+            "name_en": "Branding & Visual Identity",
+            "code": "BRANDING",
+            "icon": "Palette",
+            "color": "#ec4899",
+            "description": "بناء الهويات البصرية الكاملة، الشعارات، أدلة الاستخدام، وتصميم واجهات وتجربة المستخدم UI/UX.",
+            "roles": [
+                "مصمم هوية بصرية (Brand Designer)",
+                "مصمم واجهات وتجربة مستخدم (UI/UX)",
+                "مصمم جرافيك ومطبوعات"
+            ],
+            "services": [
+                "تصميم الشعار وبناء الهوية البصرية ودليل الاستخدام",
+                "تصميم واجهات المتاجر والتطبيقات وتجربة المستخدم (UI/UX)",
+                "تصميم المطبوعات والبوسترات التسويقية"
+            ]
+        },
+        {
+            "name_ar": "قسم البرمجة والمتاجر الإلكترونية",
+            "name_en": "Web & E-Commerce Development",
+            "code": "DEV_ECOMMERCE",
+            "icon": "Code",
+            "color": "#10b981",
+            "description": "تأسيس وإعداد المتاجر الإلكترونية (سلة / زد)، تطوير الواجهات والمواقع المخصصة، تحسين SEO، وإدارة المتاجر.",
+            "roles": [
+                "مختص متاجر إلكترونية (سلة / زد)",
+                "مطور واجهات (Front-end)",
+                "مختص SEO تقني",
+                "مسؤول إدارة متجر"
+            ],
+            "services": [
+                "تأسيس المتجر وربط بوابات الدفع والشحن (3-5 أيام)",
+                "برمجة وتطوير واجهات مواقع وصفحات هبوط مخصصة (Front-end)",
+                "تهيئة محركات البحث وتحسين سرعة المتجر (SEO)",
+                "رفع وتنسيق المنتجات وإدارة المخزون والطلبات"
+            ]
+        },
+        {
+            "name_ar": "قسم الإعلانات الممولة والحملات",
+            "name_en": "Performance Marketing & Paid Ads",
+            "code": "PERFORMANCE_ADS",
+            "icon": "TrendingUp",
+            "color": "#3b82f6",
+            "description": "إدارة الحملات الممولة على ميتا وتيك توك وسناب شات وجوجل ولينكدإن، وتحليل البيانات الإعلانية وتكلفة الاستحواذ.",
+            "roles": [
+                "مختص إعلانات منصات التواصل (Meta / TikTok / Snapchat)",
+                "مختص إعلانات جوجل (Google Ads)",
+                "مختص إعلانات لينكدإن (LinkedIn / B2B)",
+                "مختص تحليل بيانات إعلانية"
+            ],
+            "services": [
+                "إعداد وإطلاق حملات التواصل ومتابعة التحويلات (B2C)",
+                "إدارة حملات البحث وشراء جوجل (Google Search & Shopping)",
+                "حملات B2B واستقطاب الشركات عبر لينكدإن",
+                "تحليل نتائج الحملات وإعداد تقارير ROAS و CAC"
+            ]
+        },
+        {
+            "name_ar": "قسم الاستراتيجية والاستشارات",
+            "name_en": "Strategy & Consulting",
+            "code": "STRATEGY",
+            "icon": "Target",
+            "color": "#f97316",
+            "description": "بناء الاستراتيجيات التسويقية الشاملة، دراسات وبحوث السوق، وتحليل المنافسين والفرص.",
+            "roles": [
+                "استشاري تسويقي أول",
+                "محلل منافسين وبحوث سوق"
+            ],
+            "services": [
+                "بناء الخطة الاستراتيجية التسويقية الشاملة للنمو (5-7 أيام)",
+                "إعداد دراسة السوق وتحليل المنافسين والفجوات (3-5 أيام)"
+            ]
+        },
+        {
+            "name_ar": "قسم إدارة العملاء والعمليات",
+            "name_en": "Client Success & Operations",
+            "code": "OPERATIONS",
+            "icon": "Briefcase",
+            "color": "#6366f1",
+            "description": "إدارة التواصل مع العملاء، التنسيق الداخلي بين الأقسام، متابعة مواعيد التسليم والجودة.",
+            "roles": [
+                "مدير حساب مخصص (Account Manager)",
+                "منسق عمليات داخلي"
+            ],
+            "services": [
+                "إدارة العلاقة والتواصل المباشر مع العميل ومتابعة الرضا",
+                "تنسيق وتوزيع المهام بين الأقسام ومتابعة مواعيد التسليم (SLA)"
+            ]
+        }
+    ]
+
+    dept_models = []
+    for d in deps_data:
+        roles_val = d.pop("roles", [])
+        services_val = d.pop("services", [])
+        dep = models.Department(**d)
+        dep.roles = roles_val
+        dep.services = services_val
+        db.add(dep)
+        dept_models.append(dep)
+    db.commit()
+
+    # 2. Team Members
+    members_data = [
+        # Administrator (Full system privileges)
+        {
+            "username": "admin",
+            "password": "123",
+            "name": "مدير التشغيل وإدارة الموظفين (Admin)",
+            "role": "Operations & Client Success Director",
+            "email": "admin@agency.com",
+            "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+            "department_id": dept_models[2].id,
+            "role_type": "admin",
+            "is_active": True,
+            "dept_ids": [d.id for d in dept_models]
+        },
+        # Superadmin (also mapped to admin role)
+        {
+            "username": "superadmin",
+            "password": "123",
+            "name": "مالك الوكالة (Admin)",
+            "role": "Agency Owner & Executive Director",
+            "email": "superadmin@agency.com",
+            "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+            "department_id": dept_models[0].id,
+            "role_type": "admin",
+            "is_active": True,
+            "dept_ids": [d.id for d in dept_models]
+        },
+        # Manager Account
+        {
+            "username": "manager",
+            "password": "123",
+            "name": "كريم الشناوي (Manager)",
+            "role": "Operations & Project Manager",
+            "email": "manager@agency.com",
+            "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150",
+            "department_id": dept_models[0].id,
+            "role_type": "manager",
+            "is_active": True,
+            "dept_ids": [dept_models[0].id, dept_models[1].id, dept_models[2].id, dept_models[3].id, dept_models[4].id]
+        },
+        # Head of Department Account (Demo Head for Production)
+        {
+            "username": "head",
+            "password": "123",
+            "name": "كريم صادق (رئيس قسم الإنتاج)",
+            "role": "Head of Visual Production",
+            "email": "head.production@agency.com",
+            "avatar": "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150",
+            "department_id": dept_models[1].id,
+            "role_type": "head",
+            "is_active": True,
+            "dept_ids": [dept_models[1].id]
+        },
+        # Employee 1: Senior Brand Designer
+        {
+            "username": "sara",
+            "password": "123",
+            "name": "سارة محمود",
+            "role": "Senior Brand & Visual Identity Designer",
+            "email": "sara@agency.com",
+            "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+            "department_id": dept_models[0].id,
+            "role_type": "employee",
+            "is_active": True,
+            "dept_ids": [dept_models[0].id]
+        },
+        # Employee 2: Lead UI/UX Architect
+        {
+            "username": "ahmed",
+            "password": "123",
+            "name": "أحمد حلمي",
+            "role": "Lead Product & UI/UX Architect",
+            "email": "ahmed@agency.com",
+            "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150",
+            "department_id": dept_models[2].id,
+            "role_type": "employee",
+            "is_active": True,
+            "dept_ids": [dept_models[2].id, dept_models[0].id]
+        },
+        # Head of Visual Production
+        {
+            "username": "kareem",
+            "password": "123",
+            "name": "كريم صادق",
+            "role": "Commercial & Drone Media Director (Head of Production)",
+            "email": "kareem@agency.com",
+            "avatar": "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150",
+            "department_id": dept_models[1].id,
+            "role_type": "head",
+            "is_active": True,
+            "dept_ids": [dept_models[1].id]
+        },
+        # Employee 4: Creative Copywriter
+        {
+            "username": "maryam",
+            "password": "123",
+            "name": "مريم الشريف",
+            "role": "Senior Growth & Content Strategist",
+            "email": "maryam@agency.com",
+            "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+            "department_id": dept_models[3].id,
+            "role_type": "employee",
+            "is_active": True,
+            "dept_ids": [dept_models[3].id]
+        },
+        # Employee 5: Full Stack Web Developer
+        {
+            "username": "omar",
+            "password": "123",
+            "name": "عمر الفاروق",
+            "role": "Principal Software & Web Engineer",
+            "email": "omar@agency.com",
+            "avatar": "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150",
+            "department_id": dept_models[4].id,
+            "role_type": "employee",
+            "is_active": True,
+            "dept_ids": [dept_models[4].id]
+        }
+    ]
+
+    member_objs = {}
+    for m in members_data:
+        dept_ids = m.pop("dept_ids")
+        mem = models.TeamMember(**m)
+        db.add(mem)
+        db.commit()
+        db.refresh(mem)
+        # Assign many-to-many departments
+        depts = db.query(models.Department).filter(models.Department.id.in_(dept_ids)).all()
+        mem.departments = depts
+        db.commit()
+        member_objs[m["username"]] = mem
+
+    # 3. Realistic Clients & Multiple Companies
+    now = datetime.now()
+    
+    clients_seed = [
+        # ---------------- CLIENT 1: المهندس هشام نور (2 شركات) ----------------
+        {
+            "name": "المهندس هشام نور",
+            "company_name": "شركة أفق للتطوير العقاري",
+            "service_type": "تطوير هوية بصرية + منصة حجز عقاري",
+            "request_details": "طلب هوية بصرية راقية لمشروع سكني في التجمع الخامس، مع منصة ويب متجاوبة لعرض الوحدات والفلل ونظام حجز واستفسارات مباشر.",
+            "priority": "urgent",
+            "status": "in_progress",
+            "drive_folder_url": "https://drive.google.com/drive/folders/1OfuqRealEstate",
+            "drive_folder_id": "1OfuqRealEstate",
+            "intake_timestamp": now - timedelta(days=2, hours=4),
+            "target_deadline": now + timedelta(hours=36),
+            "progress_percentage": 66,
+            "stages": [
+                {
+                    "department_id": dept_models[0].id,
+                    "assigned_member_id": member_objs["sara"].id,
+                    "stage_name": "تصميم الشعار ودليل الهوية البصرية المتكامل",
+                    "description": "تصميم الشعار الأساسي مع كود الألوان، الخطوط الرسمية، وتطبيقات المطبوعات وكروت العمل.",
+                    "status": "completed",
+                    "completion_timestamp": now - timedelta(days=1, hours=8),
+                    "deliverable_note": "تم اعتماد الشعار الرئيسي ودليل الهوية بصيغة PDF عالية الدقة وتم رفع ملفات الفيكتور.",
+                    "deliverable_url": "https://drive.google.com/file/d/ofuque-brandbook-final.pdf",
+                    "order_index": 0
+                },
+                {
+                    "department_id": dept_models[2].id,
+                    "assigned_member_id": member_objs["ahmed"].id,
+                    "stage_name": "تخطيط واجهات وتجربة مستخدم منصة الحجز UI/UX",
+                    "description": "تصميم 14 شاشة رئيسية تشمل خريطة الوحدات التفاعلية، حاسبة التمويل، ومعرض الصور ثلاثي الأبعاد.",
+                    "status": "completed",
+                    "completion_timestamp": now - timedelta(hours=14),
+                    "deliverable_note": "تم تسليم بروتوتايب Figma التفاعلي واعتماده من مجلس إدارة الشركة.",
+                    "deliverable_url": "https://www.figma.com/file/ofuq-prototype-approved",
+                    "order_index": 1
+                },
+                {
+                    "department_id": dept_models[4].id,
+                    "assigned_member_id": member_objs["omar"].id,
+                    "stage_name": "برمجة المنصة الإلكترونية وربط محرك البحث العقاري",
+                    "description": "تطوير الفرونت إند والباك إند وربط استمارات الحجز السريع بنظام إدارة العملاء CRM.",
+                    "status": "in_progress",
+                    "completion_timestamp": None,
+                    "deliverable_note": None,
+                    "deliverable_url": None,
+                    "order_index": 2
+                }
+            ]
+        },
+        {
+            "name": "المهندس هشام نور",
+            "company_name": "أفق لإدارة الأصول والمنتجعات الفندقية",
+            "service_type": "تصوير سينمائي وميديا رقمية للمنتجعات",
+            "request_details": "تغطية بصرية شاملة وتصوير فوتوغرافي وجوي بالدرون لمنتجع الشركة بالساحل الشمالي لإطلاق الحجوزات الصيفية.",
+            "priority": "high",
+            "status": "in_progress",
+            "drive_folder_url": "https://drive.google.com/drive/folders/1OfuqHospitality",
+            "drive_folder_id": "1OfuqHospitality",
+            "intake_timestamp": now - timedelta(days=1, hours=10),
+            "target_deadline": now + timedelta(hours=48),
+            "progress_percentage": 50,
+            "stages": [
+                {
+                    "department_id": dept_models[1].id,
+                    "assigned_member_id": member_objs["kareem"].id,
+                    "stage_name": "جلسة التصوير الفوتوغرافي والجوي بالدرون للوحدات الفندقية",
+                    "description": "التقاط 60 صورة معالجة احترافياً للأجنحة، حمامات السباحة، وشاطئ المنتجع الخاص.",
+                    "status": "completed",
+                    "completion_timestamp": now - timedelta(hours=8),
+                    "deliverable_note": "تم رفع ألبوم الصور بجودة 4K على المجلد السحابي بانتظار المونتاج.",
+                    "deliverable_url": "https://drive.google.com/drive/folders/1OfuqHospitality/photos_4k",
+                    "order_index": 0
+                },
+                {
+                    "department_id": dept_models[1].id,
+                    "assigned_member_id": member_objs["kareem"].id,
+                    "stage_name": "مونتاج وتلوين الفيديو الإعلاني الترويجي للحملة",
+                    "description": "إنتاج فيديو دعائي مدته 60 ثانية مع تعليق صوتي وموسيقى مرخصة وتعديل سينمائي للألوان.",
+                    "status": "in_progress",
+                    "completion_timestamp": None,
+                    "deliverable_note": None,
+                    "deliverable_url": None,
+                    "order_index": 1
+                }
+            ]
+        },
+
+        # ---------------- CLIENT 2: د. رانيا عبد العزيز (2 شركات) ----------------
+        {
+            "name": "د. رانيا عبد العزيز",
+            "company_name": "علامة نماء للأغذية الصحية والعضوية",
+            "service_type": "تصوير منتجات + تصميم عبوات + إعلانات",
+            "request_details": "إطلاق خط إنتاج جديد من السناكس الصحية الغنية بالبروتين، مع تصميم عبوات عصرية وتصوير المنتجات وصناعة المحتوى الترويجي.",
+            "priority": "high",
+            "status": "in_progress",
+            "drive_folder_url": "https://drive.google.com/drive/folders/1NamaaHealthy",
+            "drive_folder_id": "1NamaaHealthy",
+            "intake_timestamp": now - timedelta(days=3, hours=2),
+            "target_deadline": now + timedelta(hours=24),
+            "progress_percentage": 66,
+            "stages": [
+                {
+                    "department_id": dept_models[3].id,
+                    "assigned_member_id": member_objs["maryam"].id,
+                    "stage_name": "صياغة اسكريبتات الحملة ورسائل القيمة الغذائية",
+                    "description": "كتابة نصوص إعلانية وفيديوهات توعوية للسوشيال ميديا تسلط الضوء على الفوائد الصحية للمنتجات.",
+                    "status": "completed",
+                    "completion_timestamp": now - timedelta(days=2),
+                    "deliverable_note": "تم اعتماد جدول النصوص والاسكريبتات المكون من 12 منشور وفيديو ريلز.",
+                    "deliverable_url": "https://drive.google.com/file/d/namaa-copywriting-scripts.docx",
+                    "order_index": 0
+                },
+                {
+                    "department_id": dept_models[1].id,
+                    "assigned_member_id": member_objs["kareem"].id,
+                    "stage_name": "جلسة تصوير المنتجات في الاستوديو مع إضاءة سينمائية",
+                    "description": "تصوير المنتجات مع المكونات الطبيعية (عسل، شوفان، مكسرات) لإنتاج لقطات جذابة تفتح الشهية.",
+                    "status": "completed",
+                    "completion_timestamp": now - timedelta(hours=22),
+                    "deliverable_note": "تم تسليم 45 صورة للمنتجات مفرغة الخلفية وجاهزة للتصميم والمتجر.",
+                    "deliverable_url": "https://drive.google.com/drive/folders/1NamaaHealthy/clean_product_shots",
+                    "order_index": 1
+                },
+                {
+                    "department_id": dept_models[0].id,
+                    "assigned_member_id": member_objs["sara"].id,
+                    "stage_name": "تصميم بنرات المتجر الإلكتروني وتصاميم السوشيال ميديا",
+                    "description": "تجهيز البوستات والستوريز للحملة الممولة على إنستجرام وتيك توك وفيسبوك.",
+                    "status": "in_progress",
+                    "completion_timestamp": None,
+                    "deliverable_note": None,
+                    "deliverable_url": None,
+                    "order_index": 2
+                }
+            ]
+        },
+        {
+            "name": "د. رانيا عبد العزيز",
+            "company_name": "سلسلة كافيهات نماء أورجانيك (Namaa Cafe)",
+            "service_type": "تصميم الهوية البصرية والقوائم والزي الموحد",
+            "request_details": "تجهيز هوية متكاملة لفرعي الشيخ زايد والقاهرة الجديدة تشمل أكواب القهوة، الأكياس الصديقة للبيئة، والمنيو التفاعلي.",
+            "priority": "medium",
+            "status": "completed",
+            "drive_folder_url": "https://drive.google.com/drive/folders/1NamaaCafe",
+            "drive_folder_id": "1NamaaCafe",
+            "intake_timestamp": now - timedelta(days=5),
+            "target_deadline": now - timedelta(hours=6),
+            "progress_percentage": 100,
+            "stages": [
+                {
+                    "department_id": dept_models[0].id,
+                    "assigned_member_id": member_objs["sara"].id,
+                    "stage_name": "تصميم هوية الأكواب والأكياس الورقية والزي الموحد",
+                    "description": "تصميم متكامل بألوان طبيعية وأنيقة مع شعار الكافيه والعبارات التحفيزية.",
+                    "status": "completed",
+                    "completion_timestamp": now - timedelta(days=3),
+                    "deliverable_note": "تم إرسال الملفات المطبعية للمطبعة والبدء في تصنيع الأكواب والأكياس.",
+                    "deliverable_url": "https://drive.google.com/file/d/namaa-cafe-packaging-print-ready.pdf",
+                    "order_index": 0
+                },
+                {
+                    "department_id": dept_models[0].id,
+                    "assigned_member_id": member_objs["sara"].id,
+                    "stage_name": "تصميم وطباعة قوائم المشروبات والوجبات الصحية",
+                    "description": "تصميم المنيو المطبوع وقائمة الأسعار الرقمية لشاشات العرض داخل الفروع.",
+                    "status": "completed",
+                    "completion_timestamp": now - timedelta(hours=10),
+                    "deliverable_note": "تم تسليم النسخ الرقمية وتجهيز كود الـ QR للمنيو الإلكتروني.",
+                    "deliverable_url": "https://drive.google.com/file/d/namaa-cafe-digital-menu.pdf",
+                    "order_index": 1
+                }
+            ]
+        },
+
+        # ---------------- CLIENT 3: أ. طارق الشناوي (2 شركات) ----------------
+        {
+            "name": "أ. طارق الشناوي",
+            "company_name": "الشناوي للخدمات اللوجستية والشحن المبرد",
+            "service_type": "تطوير لوحة تحكم تتبع الشحنات وموقع الشحن",
+            "request_details": "بناء نظام رقمي متكامل لمتابعة خطوط التوزيع والشحن المبرد للشركات والمصانع الكبرى في جميع محافظات مصر.",
+            "priority": "urgent",
+            "status": "in_progress",
+            "drive_folder_url": "https://drive.google.com/drive/folders/1ShennawyLogistics",
+            "drive_folder_id": "1ShennawyLogistics",
+            "intake_timestamp": now - timedelta(days=2, hours=16),
+            "target_deadline": now + timedelta(hours=30),
+            "progress_percentage": 33,
+            "stages": [
+                {
+                    "department_id": dept_models[2].id,
+                    "assigned_member_id": member_objs["ahmed"].id,
+                    "stage_name": "دراسة تجربة المستخدم وهندسة واجهات نظام التتبع",
+                    "description": "تخطيط شاشات السائقين وشاشات غرفة التحكم والمتابعة اللحظية لدرجات الحرارة ومسارات السيارات.",
+                    "status": "completed",
+                    "completion_timestamp": now - timedelta(days=1),
+                    "deliverable_note": "تم تسليم واجهات النظام التفاعلية ولوحة تحكم العمليات على Figma.",
+                    "deliverable_url": "https://www.figma.com/file/shennawy-logistics-ux",
+                    "order_index": 0
+                },
+                {
+                    "department_id": dept_models[4].id,
+                    "assigned_member_id": member_objs["omar"].id,
+                    "stage_name": "برمجة خريطة التتبع المباشر وتنبيهات أجهزة الاستشعار",
+                    "description": "ربط نظام المتابعة السحابي مع أجهزة الـ GPS ومستشعرات التبريد في أسطول الشاحنات.",
+                    "status": "in_progress",
+                    "completion_timestamp": None,
+                    "deliverable_note": None,
+                    "deliverable_url": None,
+                    "order_index": 1
+                },
+                {
+                    "department_id": dept_models[4].id,
+                    "assigned_member_id": member_objs["omar"].id,
+                    "stage_name": "بوابة دفع الفواتير للشركات وإصدار بوالص الشحن",
+                    "description": "أتمتة الفواتير الإلكترونية وبوالص الشحن عبر بوابات الدفع الإلكتروني المعتمدة.",
+                    "status": "pending",
+                    "completion_timestamp": None,
+                    "deliverable_note": None,
+                    "deliverable_url": None,
+                    "order_index": 2
+                }
+            ]
+        },
+        {
+            "name": "أ. طارق الشناوي",
+            "company_name": "منصة الشناوي للمزادات والتوريدات التجارية",
+            "service_type": "حملات تسويق رقمي وإدارة السوشيال ميديا",
+            "request_details": "إدارة الحملات التسويقية للمزادات الكبرى لجذب المستثمرين ورجال الأعمال والشركات الصناعية.",
+            "priority": "high",
+            "status": "in_progress",
+            "drive_folder_url": "https://drive.google.com/drive/folders/1ShennawyAuctions",
+            "drive_folder_id": "1ShennawyAuctions",
+            "intake_timestamp": now - timedelta(days=1, hours=8),
+            "target_deadline": now + timedelta(hours=40),
+            "progress_percentage": 50,
+            "stages": [
+                {
+                    "department_id": dept_models[3].id,
+                    "assigned_member_id": member_objs["maryam"].id,
+                    "stage_name": "إعداد المحتوى الاستراتيجي لحملة مزادات الربع الأخير",
+                    "description": "صياغة كراسات الشروط الإعلانية والمنشورات الاحترافية على شبكة LinkedIn.",
+                    "status": "completed",
+                    "completion_timestamp": now - timedelta(hours=12),
+                    "deliverable_note": "تم تجهيز ونشر الخطة التسويقية وحقائب المزاد التعريفية بنجاح.",
+                    "deliverable_url": "https://drive.google.com/file/d/auctions-plan-q4.pdf",
+                    "order_index": 0
+                },
+                {
+                    "department_id": dept_models[3].id,
+                    "assigned_member_id": member_objs["maryam"].id,
+                    "stage_name": "إطلاق وإدارة الحملات الممولة على Google Search & LinkedIn",
+                    "description": "متابعة أداء الإعلانات وتحسين تكلفة الحصول على مشترين ومزايدين مؤهلين.",
+                    "status": "in_progress",
+                    "completion_timestamp": None,
+                    "deliverable_note": None,
+                    "deliverable_url": None,
+                    "order_index": 1
+                }
+            ]
+        },
+
+        # ---------------- CLIENT 4: م. حسام التميمي (1 شركة مكتملة 100%) ----------------
+        {
+            "name": "م. حسام التميمي",
+            "company_name": "تطبيق باص كليك للنقل التشاركي الذكي",
+            "service_type": "تصميم واجهات وتطوير تطبيق جوال متكامل",
+            "request_details": "تطوير تطبيق جوال للنقل الجماعي الذكي بين المدن مع شاشات الحجز المباشر واختيار المقاعد والدفع السريع.",
+            "priority": "medium",
+            "status": "completed",
+            "drive_folder_url": "https://drive.google.com/drive/folders/1BusClickApp",
+            "drive_folder_id": "1BusClickApp",
+            "intake_timestamp": now - timedelta(days=6),
+            "target_deadline": now - timedelta(days=1),
+            "progress_percentage": 100,
+            "stages": [
+                {
+                    "department_id": dept_models[2].id,
+                    "assigned_member_id": member_objs["ahmed"].id,
+                    "stage_name": "تصميم رحلة المستخدم وواجهات الركاب والسائقين",
+                    "description": "تصميم الواجهات الكاملة للتطبيق مع محاكاة تجربة الحجز التفاعلي واختيار المقاعد.",
+                    "status": "completed",
+                    "completion_timestamp": now - timedelta(days=4),
+                    "deliverable_note": "تم تسليم كافة الشاشات على Figma مع تصدير الأيقونات والرسومات.",
+                    "deliverable_url": "https://www.figma.com/file/busclick-app-design-complete",
+                    "order_index": 0
+                },
+                {
+                    "department_id": dept_models[4].id,
+                    "assigned_member_id": member_objs["omar"].id,
+                    "stage_name": "برمجة لوحة التحكم والخرائط الحية وتطبيق الموبايل",
+                    "description": "برمجة التطبيق ولوحة العمليات وربط الخرائط الحية وتتبع الرحلات المباشر.",
+                    "status": "completed",
+                    "completion_timestamp": now - timedelta(days=2),
+                    "deliverable_note": "تم رفع نسخة التطبيق التجريبية (Beta APK & TestFlight) واعتمادها.",
+                    "deliverable_url": "https://drive.google.com/file/d/busclick-release-v1.apk",
+                    "order_index": 1
+                },
+                {
+                    "department_id": dept_models[4].id,
+                    "assigned_member_id": member_objs["omar"].id,
+                    "stage_name": "فحص التوافقية والأمان وتسليم النظام النهائي",
+                    "description": "اختبار ضغط الخوادم والتأكد من أمان بوابات الدفع وتسليم كود المشروع والوثائق.",
+                    "status": "completed",
+                    "completion_timestamp": now - timedelta(hours=28),
+                    "deliverable_note": "تم تسليم شهادة الجودة والأكواد المصدرية وتشغيل النظام رسمياً.",
+                    "deliverable_url": "https://drive.google.com/file/d/system-delivery-certificate.pdf",
+                    "order_index": 2
+                }
+            ]
+        }
+    ]
+
+    for cdata in clients_seed:
+        stages_info = cdata.pop("stages")
+        client = models.Client(**cdata)
+        db.add(client)
+        db.commit()
+        db.refresh(client)
+
+        # Drive folder sub-items
+        drive_items = [
+            models.DriveFolderItem(client_id=client.id, name="01_Brand_Identity_Assets", path="/01_Brand_Identity_Assets", is_folder=True, created_at=client.intake_timestamp),
+            models.DriveFolderItem(client_id=client.id, name="02_Media_Photography_4K", path="/02_Media_Photography_4K", is_folder=True, created_at=client.intake_timestamp),
+            models.DriveFolderItem(client_id=client.id, name="03_UI_UX_Design_Figma", path="/03_UI_UX_Design_Figma", is_folder=True, created_at=client.intake_timestamp),
+            models.DriveFolderItem(client_id=client.id, name="04_Approved_Deliverables", path="/04_Approved_Deliverables", is_folder=True, created_at=client.intake_timestamp)
+        ]
+        for ditem in drive_items:
+            db.add(ditem)
+
+        audit_intake = models.AuditLog(
+            client_id=client.id,
+            action="INTAKE_RECORDED",
+            performed_by="System Auto-Provisioner",
+            timestamp=client.intake_timestamp,
+            details=f"تم تسجيل الشركة وتوليد مجلد Google Drive السحابي ({client.company_name}) وتوزيع المهام."
+        )
+        db.add(audit_intake)
+
+        for sinfo in stages_info:
+            stage = models.TaskStage(client_id=client.id, **sinfo)
+            db.add(stage)
+            db.commit()
+
+            if sinfo["status"] == "completed" and sinfo["completion_timestamp"]:
+                member = db.get(models.TeamMember, sinfo["assigned_member_id"])
+                audit_stage = models.AuditLog(
+                    client_id=client.id,
+                    action="STAGE_COMPLETED",
+                    performed_by=member.name if member else "Team Member",
+                    timestamp=sinfo["completion_timestamp"],
+                    details=f"تم تسليم مرحلة ({sinfo['stage_name']}) بنجاح وتسجيل الملاحظات وروابط الإنجاز."
+                )
+                db.add(audit_stage)
+
+    db.commit()
+    if should_close:
+        db.close()
+    print("Realistic seeding finished with 4 real clients, 7 companies, full tasks, and 0 numeric test records!")
+
+if __name__ == "__main__":
+    seed_database()

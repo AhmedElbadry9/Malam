@@ -3,7 +3,7 @@ import confetti from 'canvas-confetti';
 import { 
   CheckCircle2, Clock, FolderGit2, Send, Building2,
   AlertTriangle, RotateCcw, ExternalLink, ShieldCheck, History, FileText,
-  Store, Mail, Phone, Globe, Copy, Check
+  Globe, Copy, Check
 } from 'lucide-react';
 import type { Client, TeamMember, TaskStage } from '../types';
 import { Button } from './ui/Button';
@@ -584,56 +584,53 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
 
       {/* Task Details & Full Brief Modal */}
       {selectedTaskForDetails && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-4xl bg-slate-900 border border-slate-750 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[88vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm animate-fadeIn">
+          <div className="w-full max-w-4xl bg-slate-900 border border-slate-750 rounded-2xl shadow-2xl flex flex-col max-h-[88vh] overflow-hidden">
             
-            {/* 1. Modal Top Header */}
-            <div className="px-6 py-4 border-b border-slate-800 bg-slate-950/80 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/25 text-teal-400 flex items-center justify-center font-bold shrink-0 shadow-inner">
-                  <FileText className="w-5 h-5" />
+            {/* 1. Modal Header - Spacious & Clean */}
+            <div className="px-6 py-5 border-b border-slate-800 bg-slate-950/90 flex items-start justify-between gap-4 shrink-0">
+              <div className="space-y-1.5 min-w-0">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <span className="px-2.5 py-0.5 rounded-md text-xs font-bold bg-teal-500/15 text-teal-300 border border-teal-500/30">
+                    {selectedTaskForDetails.client.platform || 'زد'}
+                  </span>
+                  <h2 className="text-base sm:text-lg font-black text-white leading-snug">
+                    {selectedTaskForDetails.stage.stage_name}
+                  </h2>
                 </div>
-                <div>
-                  <div className="flex items-center gap-2.5">
-                    <h3 className="text-base font-bold text-white tracking-wide">{selectedTaskForDetails.stage.stage_name}</h3>
-                    <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-slate-800 text-teal-300 border border-teal-500/30">
-                      {selectedTaskForDetails.client.platform || 'زد'}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-400 mt-1 flex items-center gap-2">
-                    <Building2 className="w-3.5 h-3.5 text-indigo-400" />
-                    <span className="text-slate-200 font-semibold">{selectedTaskForDetails.client.company_name}</span>
-                    <span className="text-slate-600">•</span>
-                    <span>العميل: {selectedTaskForDetails.client.name}</span>
-                  </p>
-                </div>
+                <p className="text-xs text-slate-400 flex items-center gap-2">
+                  <Building2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                  <span className="text-slate-200 font-bold">{selectedTaskForDetails.client.company_name}</span>
+                  <span className="text-slate-600">•</span>
+                  <span>العميل: {selectedTaskForDetails.client.name}</span>
+                </p>
               </div>
 
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2.5 shrink-0 pt-0.5">
                 <StatusBadge status={selectedTaskForDetails.stage.status} size="sm" />
                 <PriorityBadge priority={selectedTaskForDetails.client.priority} />
                 <button
                   type="button"
                   onClick={() => setSelectedTaskForDetails(null)}
-                  className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer mr-1"
+                  className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer text-sm font-bold ml-1"
                 >
                   ✕
                 </button>
               </div>
             </div>
 
-            {/* 2. Modal Body - 2 Columns */}
-            <div className="p-6 overflow-y-auto flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 bg-slate-900/50">
+            {/* 2. Modal Body - Clean 2-Column Responsive Layout */}
+            <div className="p-6 overflow-y-auto flex-1 grid grid-cols-1 md:grid-cols-12 gap-6 bg-slate-900">
               
-              {/* Right Column: Directives & Instructions (7 / 12) */}
-              <div className="lg:col-span-7 space-y-4">
+              {/* Main Column: Instructions & Notes (7 / 12) */}
+              <div className="md:col-span-7 space-y-5">
                 
                 {/* Revisions Alert if any */}
                 {selectedTaskForDetails.stage.revision_notes && (
                   <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-4 space-y-1.5 shadow-sm">
                     <div className="flex items-center gap-2 text-xs font-bold text-rose-300">
                       <AlertTriangle className="w-4 h-4 text-rose-400" />
-                      <span>ملاحظات التعديل المطلوبة من رئيس القسم / الإدارة</span>
+                      <span>ملاحظات التعديل المطلوبة من رئيس القسم / الإدارة:</span>
                     </div>
                     <p className="text-xs text-rose-100 leading-relaxed whitespace-pre-wrap font-sans pt-1">
                       {selectedTaskForDetails.stage.revision_notes}
@@ -643,11 +640,11 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
 
                 {/* Head Instructions */}
                 {selectedTaskForDetails.stage.head_instructions ? (
-                  <div className="bg-slate-950/70 border border-teal-500/30 rounded-xl p-4 space-y-2 relative shadow-sm">
+                  <div className="rounded-xl bg-slate-950/60 border border-teal-500/30 p-4 space-y-2">
                     <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
                       <h4 className="text-xs font-bold text-teal-300 flex items-center gap-1.5">
                         <span>✍️</span>
-                        <span>توجيهات وتعليمات رئيس القسم للمهمة:</span>
+                        <span>توجيهات رئيس القسم للمهمة:</span>
                       </h4>
                       <span className="text-[10px] text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20 font-bold">
                         تعليمات فنية
@@ -660,146 +657,99 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
                 ) : null}
 
                 {/* Admin Management Brief */}
-                <div className="bg-slate-950/70 border border-slate-800 rounded-xl p-4 space-y-2 relative overflow-hidden shadow-sm">
-                  <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
-                    <div className="flex items-center gap-2 text-xs font-bold text-indigo-300">
-                      <FileText className="w-4 h-4 text-indigo-400" />
-                      <span>توجيهات ومتطلبات الإدارة</span>
-                    </div>
-                    <span className="text-[10px] text-slate-500 font-medium">مرجع للاطلاع</span>
+                <div className="rounded-xl bg-slate-950/60 border border-slate-800 p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-indigo-300">
+                    <FileText className="w-4 h-4 text-indigo-400" />
+                    <span>توجيهات ومتطلبات الإدارة (مرجع للاطلاع):</span>
                   </div>
-                  <div className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap font-sans max-h-36 overflow-y-auto pt-1">
+                  <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap font-sans">
                     {selectedTaskForDetails.stage.description || selectedTaskForDetails.client.request_details || (
                       <span className="text-slate-500 italic text-[11px]">لا توجد ملاحظات إضافية مسجلة من الإدارة على هذه المهمة.</span>
                     )}
-                  </div>
+                  </p>
                 </div>
               </div>
 
-              {/* Left Column: Store Specs Sidebar (5 / 12) */}
-              <div className="lg:col-span-5 space-y-4">
+              {/* Sidebar Column: Details (5 / 12) */}
+              <div className="md:col-span-5 space-y-4">
                 
-                {/* 🏢 Store & Client Details Bento Card */}
-                <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-md text-xs">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-indigo-400 flex items-center justify-center text-xs">
-                        <Store className="w-3.5 h-3.5" />
-                      </div>
-                      <span className="text-xs font-black text-white tracking-wide">بيانات المتجر والطلب</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-400 bg-slate-900 px-2 py-0.5 rounded-full border border-slate-800">
-                      ملف العميل
+                {/* Clean Property List */}
+                <div className="rounded-xl bg-slate-950/60 border border-slate-800 p-4 space-y-2.5 text-xs">
+                  <span className="text-xs font-bold text-white block pb-1 border-b border-slate-800">
+                    تفاصيل المتجر والطلب
+                  </span>
+
+                  <div className="flex items-center justify-between py-1 border-b border-slate-850">
+                    <span className="text-slate-400 text-xs">اسم المتجر:</span>
+                    <span className="text-slate-200 font-bold">{selectedTaskForDetails.client.company_name}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between py-1 border-b border-slate-850">
+                    <span className="text-slate-400 text-xs">المنصة:</span>
+                    <span className="text-slate-200 font-bold bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+                      {selectedTaskForDetails.client.platform || 'زد'}
                     </span>
                   </div>
 
-                  <div className="space-y-2.5">
-                    {/* Store & Client Name Tile */}
-                    <div className="bg-slate-900/90 border border-slate-800/90 rounded-xl p-2.5 flex items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <span className="text-[10px] text-slate-400 font-bold block mb-0.5">اسم المتجر / الشركة</span>
-                        <h4 className="text-xs font-black text-white truncate">{selectedTaskForDetails.client.company_name}</h4>
-                      </div>
-                      <div className="text-left shrink-0">
-                        <span className="text-[10px] text-slate-400 font-bold block mb-0.5">المسؤول</span>
-                        <span className="text-[11px] font-bold text-slate-300 bg-slate-950 px-2 py-0.5 rounded-lg border border-slate-800">
-                          👤 {selectedTaskForDetails.client.name}
-                        </span>
-                      </div>
-                    </div>
+                  <div className="flex items-center justify-between py-1 border-b border-slate-850">
+                    <span className="text-slate-400 text-xs">الباقة / الخدمة:</span>
+                    <span className="text-amber-300 font-bold">
+                      {selectedTaskForDetails.client.package_name || selectedTaskForDetails.client.service_type || 'باقة متكاملة'}
+                    </span>
+                  </div>
 
-                    {/* Platform & Package Grid */}
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="bg-slate-900/90 border border-slate-800/90 rounded-xl p-2.5">
-                        <span className="text-[10px] text-slate-400 font-bold block mb-1">المنصة المعتمدة</span>
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                          <span className="text-xs font-bold text-emerald-300">{selectedTaskForDetails.client.platform || 'زد (Zid)'}</span>
-                        </div>
-                      </div>
-                      <div className="bg-slate-900/90 border border-slate-800/90 rounded-xl p-2.5">
-                        <span className="text-[10px] text-slate-400 font-bold block mb-1">نوع الباقة / الخدمة</span>
-                        <span className="text-xs font-bold text-amber-300 truncate block">
-                          ✨ {selectedTaskForDetails.client.package_name || selectedTaskForDetails.client.service_type || 'باقة متكاملة'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Agency Email with Copy Button */}
-                    <div className="bg-slate-900/90 border border-slate-800/90 rounded-xl p-2.5 flex items-center justify-between gap-2">
-                      <div className="min-w-0 flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0">
-                          <Mail className="w-3.5 h-3.5" />
-                        </div>
-                        <div className="min-w-0">
-                          <span className="text-[10px] text-slate-400 font-bold block">إيميل الوكالة المسجل</span>
-                          <span className="text-[11px] font-mono font-bold text-indigo-200 select-all truncate block">
-                            {selectedTaskForDetails.client.agency_email || 'غير مسجل'}
-                          </span>
-                        </div>
-                      </div>
+                  <div className="flex items-center justify-between py-1 border-b border-slate-850">
+                    <span className="text-slate-400 text-xs">إيميل الوكالة:</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-indigo-300 font-mono text-[11px] select-all max-w-[140px] truncate">
+                        {selectedTaskForDetails.client.agency_email || 'غير مسجل'}
+                      </span>
                       {selectedTaskForDetails.client.agency_email && (
                         <button
                           type="button"
                           onClick={() => handleCopyText(selectedTaskForDetails.client.agency_email || '', 'email')}
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all cursor-pointer shrink-0"
+                          className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer"
                           title="نسخ الإيميل"
                         >
-                          {copiedField === 'email' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                          {copiedField === 'email' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                         </button>
                       )}
                     </div>
+                  </div>
 
-                    {/* Phone with Copy Button */}
-                    <div className="bg-slate-900/90 border border-slate-800/90 rounded-xl p-2.5 flex items-center justify-between gap-2">
-                      <div className="min-w-0 flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
-                          <Phone className="w-3.5 h-3.5" />
-                        </div>
-                        <div className="min-w-0">
-                          <span className="text-[10px] text-slate-400 font-bold block">رقم هاتف العميل</span>
-                          <span className="text-[11px] font-mono font-bold text-slate-200 select-all truncate block">
-                            {selectedTaskForDetails.client.phone || 'غير مسجل'}
-                          </span>
-                        </div>
-                      </div>
+                  <div className="flex items-center justify-between py-1 border-b border-slate-850">
+                    <span className="text-slate-400 text-xs">رقم الهاتف:</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-slate-200 font-mono text-[11px]">
+                        {selectedTaskForDetails.client.phone || 'غير مسجل'}
+                      </span>
                       {selectedTaskForDetails.client.phone && (
                         <button
                           type="button"
                           onClick={() => handleCopyText(selectedTaskForDetails.client.phone || '', 'phone')}
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all cursor-pointer shrink-0"
-                          title="نسخ رقم الهاتف"
+                          className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                          title="نسخ الهاتف"
                         >
-                          {copiedField === 'phone' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                          {copiedField === 'phone' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                         </button>
                       )}
                     </div>
+                  </div>
 
-                    {/* Live Store URL Banner */}
-                    {selectedTaskForDetails.client.website_url && (
+                  {selectedTaskForDetails.client.website_url && (
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-slate-400 text-xs">رابط المتجر:</span>
                       <a
                         href={selectedTaskForDetails.client.website_url.startsWith('http') ? selectedTaskForDetails.client.website_url : `https://${selectedTaskForDetails.client.website_url}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="group bg-gradient-to-r from-cyan-950/40 to-blue-950/40 hover:from-cyan-900/50 hover:to-blue-900/50 border border-cyan-500/30 hover:border-cyan-400 rounded-xl p-2.5 flex items-center justify-between transition-all cursor-pointer shadow-sm"
+                        className="text-cyan-400 hover:underline font-mono text-xs flex items-center gap-1 font-bold"
                       >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className="w-6 h-6 rounded-lg bg-cyan-500/20 text-cyan-300 flex items-center justify-center shrink-0">
-                            <Globe className="w-3.5 h-3.5" />
-                          </div>
-                          <div className="min-w-0">
-                            <span className="text-[10px] text-cyan-300 font-bold block">رابط المتجر المباشر</span>
-                            <span className="text-[11px] font-mono text-white truncate block font-bold">
-                              {selectedTaskForDetails.client.website_url}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1 text-[11px] font-bold text-cyan-300 group-hover:text-cyan-200 shrink-0">
-                          <span>زيارة ↗</span>
-                        </div>
+                        <Globe className="w-3 h-3" />
+                        <span>زيارة المتجر ↗</span>
                       </a>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
 
               </div>
@@ -807,7 +757,7 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
             </div>
 
             {/* 3. Modal Footer */}
-            <div className="px-6 py-3.5 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between shrink-0 text-xs">
+            <div className="px-6 py-4 border-t border-slate-800 bg-slate-950/90 flex items-center justify-between shrink-0 text-xs">
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"

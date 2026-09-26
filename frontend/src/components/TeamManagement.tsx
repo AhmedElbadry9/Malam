@@ -107,9 +107,7 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
   const [departmentId, setDepartmentId] = useState<number>(departments[0]?.id || 1);
   const [departmentIds, setDepartmentIds] = useState<number[]>([]);
   const [roleType, setRoleType] = useState<'admin' | 'manager' | 'head' | 'employee' | 'super_admin'>('employee');
-  const [isActive, setIsActive] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [showAllRoles, setShowAllRoles] = useState(false);
 
   // Password Reset State
   const [newPassword, setNewPassword] = useState('');
@@ -147,8 +145,6 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
     setDepartmentId(departments[0]?.id || 1);
     setDepartmentIds([departments[0]?.id || 1]);
     setRoleType('employee');
-    setIsActive(true);
-    setShowAllRoles(false);
     setIsModalOpen(true);
   };
 
@@ -171,8 +167,6 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
       : (member.department_id ? [member.department_id] : [departments[0]?.id || 1]);
     setDepartmentIds(ids);
     setRoleType(member.role_type || 'employee');
-    setIsActive(member.is_active !== false);
-    setShowAllRoles(false);
     setIsModalOpen(true);
   };
 
@@ -192,7 +186,7 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
         department_id: chosenDepts[0],
         department_ids: chosenDepts,
         role_type: roleType,
-        is_active: isActive
+        is_active: editingMember ? editingMember.is_active !== false : true
       };
 
       if (editingMember) {
@@ -730,17 +724,10 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
 
               {/* Section 3: Role Title & Suggestions */}
               <div className="space-y-2 pt-2 border-t border-white/10">
-                <div className="flex items-center justify-between">
+                <div>
                   <h4 className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
                     <span>3. المسمى الوظيفي والدور التخصصي</span>
                   </h4>
-                  <button
-                    type="button"
-                    onClick={() => setShowAllRoles(!showAllRoles)}
-                    className="text-[11px] text-indigo-400 hover:text-indigo-300 font-bold underline cursor-pointer"
-                  >
-                    {showAllRoles ? '✨ إظهار وظائف الأقسام المختارة فقط' : '🌐 عرض كل وظائف الوكالة'}
-                  </button>
                 </div>
 
                 <input
@@ -748,25 +735,23 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
                   required
                   value={roleTitle}
                   onChange={(e) => setRoleTitle(e.target.value)}
-                  placeholder="اكتب المسمى الوظيفي أو اختر من المسميات المقترحة بالأسفل..."
+                  placeholder="اكتب المسمى الوظيفي أو اضغط على أحد المسميات المقترحة لقسمك بالأسفل..."
                   className="w-full p-2.5 rounded-xl bg-slate-950 border border-white/10 text-white focus:outline-none focus:border-indigo-500 transition-colors font-medium"
                 />
 
                 {/* Role Suggestions Box */}
                 <div className="p-3 rounded-2xl bg-slate-950/70 border border-white/10 space-y-2">
                   <span className="text-[10px] text-gray-400 block font-medium">
-                    {showAllRoles ? 'جميع المسميات الوظيفية المعتمدة بالوكالة (اضغط للتعيين المباشر):' : 'المسميات المتاحة للأقسام التي اخترتها:'}
+                    الوظائف والمسميات المتاحة للأقسام التي تم تحديدها (اضغط للتعيين المباشر):
                   </span>
 
                   {(() => {
-                    const activeDepts = showAllRoles
-                      ? departments
-                      : departments.filter(d => departmentIds.includes(d.id));
+                    const activeDepts = departments.filter(d => departmentIds.includes(d.id));
 
                     if (activeDepts.length === 0) {
                       return (
-                        <p className="text-[11px] text-gray-400 py-1">
-                          اختر قسماً من القائمة أعلاه لتظهر الوظائف المتاحة له هنا.
+                        <p className="text-[11px] text-amber-400/90 py-1 font-medium">
+                          ⚠️ يرجى اختيار قسم واحد على الأقل من القائمة بالأعلى لتظهر مسمياته الوظيفية المعتمدة هنا.
                         </p>
                       );
                     }

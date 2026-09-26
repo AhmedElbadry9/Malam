@@ -1020,49 +1020,44 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
 
       {/* Assignment & Briefing Modal */}
       {selectedStageForAssignment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
-          <div className="glass-panel w-full max-w-lg rounded-3xl p-6 border border-slate-700/70 space-y-5 shadow-2xl bg-slate-900/95">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+          <div className="w-full max-w-lg bg-slate-900 border border-slate-750 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3.5">
+            <div className="px-6 py-4 border-b border-slate-800 bg-slate-950/60 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-teal-500/15 border border-teal-500/30 text-teal-400 flex items-center justify-center font-bold">
-                  <UserPlus className="w-5 h-5" />
+                <div className="w-8 h-8 rounded-xl bg-teal-500/15 border border-teal-500/30 text-teal-400 flex items-center justify-center font-bold">
+                  <UserPlus className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-white">إسناد وتوجيه المهمة للموظف</h3>
+                  <h3 className="text-sm font-bold text-white">إسناد وتوجيه المهمة للموظف</h3>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    {selectedStageForAssignment.client.company_name} • <span className="text-teal-300 font-bold">{selectedStageForAssignment.stage.stage_name}</span>
+                    {selectedStageForAssignment.client.company_name} • <span className="text-teal-300 font-semibold">{selectedStageForAssignment.stage.stage_name}</span>
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedStageForAssignment(null)}
-                className="text-gray-400 hover:text-white font-bold p-1.5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer"
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            {/* Admin Management Brief Context (Read-Only) */}
-            {(selectedStageForAssignment.stage.description || selectedStageForAssignment.client.request_details) && (
-              <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
-                    <FileText className="w-3.5 h-3.5 text-indigo-400" />
-                    <span>توجيهات ومتطلبات الإدارة (مرجع للاطلاع):</span>
+            <form onSubmit={handleConfirmAssignment} className="p-6 space-y-4 text-xs">
+              {/* Management brief context if exists */}
+              {(selectedStageForAssignment.stage.description || selectedStageForAssignment.client.request_details) && (
+                <div className="bg-slate-950/60 border-r-2 border-indigo-500 rounded-xl p-3 border border-slate-800 space-y-1">
+                  <span className="text-[11px] font-bold text-indigo-300 flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>توجيهات ومتطلبات الإدارة (مرجع):</span>
                   </span>
-                  <span className="text-[10px] text-slate-400 bg-slate-850 px-2 py-0.5 rounded border border-slate-750">
-                    من الإدارة
-                  </span>
+                  <p className="text-xs text-slate-300 leading-relaxed max-h-24 overflow-y-auto whitespace-pre-wrap">
+                    {selectedStageForAssignment.stage.description || selectedStageForAssignment.client.request_details}
+                  </p>
                 </div>
-                <p className="text-xs text-slate-200 leading-relaxed max-h-28 overflow-y-auto whitespace-pre-wrap bg-slate-900/90 p-3 rounded-xl border border-slate-800/80 font-sans">
-                  {selectedStageForAssignment.stage.description || selectedStageForAssignment.client.request_details}
-                </p>
-              </div>
-            )}
+              )}
 
-            <form onSubmit={handleConfirmAssignment} className="space-y-4 text-xs">
               <div>
                 <label className="block font-bold text-slate-200 mb-1.5">
                   1. اختر الموظف المنفذ من فريق قسمك:
@@ -1071,7 +1066,7 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                   required
                   value={assignmentSelectedMemberId}
                   onChange={(e) => setAssignmentSelectedMemberId(e.target.value ? Number(e.target.value) : '')}
-                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white font-bold text-xs focus:outline-none focus:border-teal-500 cursor-pointer"
+                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-700/80 text-white font-bold text-xs focus:outline-none focus:border-teal-500 cursor-pointer"
                 >
                   <option value="" disabled>-- اختر الموظف المنفذ --</option>
                   {deptMembers.filter(m => m.id !== currentMember.id).map(m => (
@@ -1086,41 +1081,39 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block font-bold text-teal-300 flex items-center gap-1.5">
                     <span>✍️</span>
-                    <span>2. توجيهات وتعليمات رئيس القسم للموظف:</span>
+                    <span>2. توجيهاتك الخاصة للموظف:</span>
                   </label>
                   <span className="text-[10px] text-slate-400">ستصل للموظف كتعليمات فنية منك</span>
                 </div>
                 <textarea
-                  rows={4}
+                  rows={3}
                   value={assignmentInstructions}
                   onChange={(e) => setAssignmentInstructions(e.target.value)}
-                  placeholder="اكتب هنا توجيهاتك الخاصة للموظف لتنفيذ هذه المهمة بالشكل الصحيح..."
-                  className="w-full p-3 rounded-xl bg-slate-950 border border-teal-500/30 focus:border-teal-400 text-white placeholder-slate-500 leading-relaxed text-xs resize-none"
+                  placeholder="اكتب هنا توجيهاتك وتفاصيل التنفيذ المطلوبة من الموظف..."
+                  className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700/80 focus:border-teal-400 text-white placeholder-slate-500 leading-relaxed text-xs resize-none"
                 />
               </div>
 
               <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-800">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={() => setSelectedStageForAssignment(null)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-white/5 hover:bg-white/10 text-gray-300 transition-colors cursor-pointer"
                 >
                   إلغاء
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
+                  variant="primary"
+                  size="sm"
                   disabled={!assignmentSelectedMemberId || isSubmittingAssignment}
-                  className="px-5 py-2.5 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-500 text-white shadow-lg shadow-teal-600/20 transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-40 active:scale-95 border border-teal-400/30"
+                  loading={isSubmittingAssignment}
+                  icon={<Send className="w-3.5 h-3.5" />}
+                  className="bg-teal-600 hover:bg-teal-500 text-white"
                 >
-                  {isSubmittingAssignment ? (
-                    <>جاري التكليف...</>
-                  ) : (
-                    <>
-                      <Send className="w-3.5 h-3.5" />
-                      <span>تأكيد التكليف وإرسال المهمة للموظف</span>
-                    </>
-                  )}
-                </button>
+                  تأكيد التكليف وإرسال المهمة
+                </Button>
               </div>
             </form>
           </div>
@@ -1129,213 +1122,259 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
 
       {/* Task Details & Brief Directives Modal */}
       {selectedTaskForDetails && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
-          <div className="glass-panel w-full max-w-2xl rounded-3xl p-6 border border-slate-750 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto bg-slate-900/95">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3.5">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-teal-500/20 text-teal-400 border border-teal-500/30 flex items-center justify-center font-bold">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+          <div className="w-full max-w-4xl bg-slate-900 border border-slate-750 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[88vh]">
+            
+            {/* 1. Modal Top Header */}
+            <div className="px-6 py-4 border-b border-slate-800 bg-slate-950/80 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/25 text-teal-400 flex items-center justify-center font-bold shrink-0 shadow-inner">
                   <FileText className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-white">{selectedTaskForDetails.stage.stage_name}</h3>
-                  <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
+                  <div className="flex items-center gap-2.5">
+                    <h3 className="text-base font-bold text-white tracking-wide">{selectedTaskForDetails.stage.stage_name}</h3>
+                    <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-slate-800 text-teal-300 border border-teal-500/30">
+                      {selectedTaskForDetails.client.platform || 'زد'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1 flex items-center gap-2">
                     <Building2 className="w-3.5 h-3.5 text-indigo-400" />
-                    <span className="text-white font-bold">{selectedTaskForDetails.client.company_name}</span>
-                    <span>•</span>
+                    <span className="text-slate-200 font-semibold">{selectedTaskForDetails.client.company_name}</span>
+                    <span className="text-slate-600">•</span>
                     <span>العميل: {selectedTaskForDetails.client.name}</span>
                   </p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setSelectedTaskForDetails(null)}
-                className="text-gray-400 hover:text-white font-bold p-1.5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
 
-            {/* Status & Assignment Meta Bar */}
-            <div className="flex items-center justify-between gap-2 p-3 rounded-2xl bg-slate-950/70 border border-slate-800/80 text-xs flex-wrap">
-              <div className="flex items-center gap-2">
-                <span className="text-slate-400 font-medium">الحالة:</span>
+              <div className="flex items-center gap-2.5">
                 <StatusBadge status={selectedTaskForDetails.stage.status} size="sm" />
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-slate-400 font-medium">الأولوية:</span>
                 <PriorityBadge priority={selectedTaskForDetails.client.priority} />
-              </div>
-              <div className="flex items-center gap-1.5 text-indigo-300 font-bold">
-                <span className="text-slate-400 font-medium">الموظف المكلف:</span>
-                {(() => {
-                  const mem = members.find(m => m.id === selectedTaskForDetails.stage.assigned_member_id);
-                  return mem ? (
-                    <span className="text-white bg-slate-850 px-2.5 py-0.5 rounded-lg border border-slate-750">
-                      👤 {mem.name} ({mem.role})
-                    </span>
-                  ) : (
-                    <span className="text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/30">
-                      ⚠️ بانتظار تعيين موظف
-                    </span>
-                  );
-                })()}
+                <button
+                  type="button"
+                  onClick={() => setSelectedTaskForDetails(null)}
+                  className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer mr-1"
+                >
+                  ✕
+                </button>
               </div>
             </div>
 
-            {/* SECTION 1: Admin & Management Brief (Read-Only Reference) */}
-            <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
-                  <FileText className="w-4 h-4 text-indigo-400" />
-                  <span>توجيهات وملاحظات الإدارة على المهمة (مرجع للاطلاع):</span>
-                </span>
-                <span className="text-[10px] text-slate-400 bg-slate-850 px-2 py-0.5 rounded border border-slate-750">
-                  من الإدارة
-                </span>
-              </div>
-              <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800/90 text-xs text-slate-200 leading-relaxed whitespace-pre-wrap font-sans">
-                {selectedTaskForDetails.stage.description || selectedTaskForDetails.client.request_details || (
-                  <span className="text-slate-500 italic">لا توجد ملاحظات إضافية مسجلة من الإدارة على هذه المهمة.</span>
-                )}
-              </div>
-            </div>
-
-            {/* SECTION 2: Department Head Directives to Employee (Interactive & Clean) */}
-            <div className="p-4 rounded-2xl bg-teal-500/[0.04] border border-teal-500/25 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">✍️</span>
-                  <div>
-                    <label className="text-xs font-bold text-white block">
-                      توجيهات رئيس القسم للموظف:
-                    </label>
-                    <span className="text-[10px] text-slate-400 block mt-0.5">
-                      تظهر للموظف كتعليمات وتوجيهات خاصة من رئيس القسم لتنفيذ العمل
-                    </span>
+            {/* 2. Modal Body - 2 Columns */}
+            <div className="p-6 overflow-y-auto flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 bg-slate-900/50">
+              
+              {/* Right Column: Directives & Instructions (7 / 12) */}
+              <div className="lg:col-span-7 space-y-4">
+                
+                {/* Admin Management Brief */}
+                <div className="bg-slate-950/70 border border-slate-800 rounded-xl p-4 space-y-2 relative overflow-hidden shadow-sm">
+                  <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                    <div className="flex items-center gap-2 text-xs font-bold text-indigo-300">
+                      <FileText className="w-4 h-4 text-indigo-400" />
+                      <span>توجيهات ومتطلبات الإدارة</span>
+                    </div>
+                    <span className="text-[10px] text-slate-500 font-medium">مرجع للاطلاع</span>
+                  </div>
+                  <div className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap font-sans max-h-36 overflow-y-auto pt-1">
+                    {selectedTaskForDetails.stage.description || selectedTaskForDetails.client.request_details || (
+                      <span className="text-slate-500 italic text-[11px]">لا توجد ملاحظات إضافية مسجلة من الإدارة على هذه المهمة.</span>
+                    )}
                   </div>
                 </div>
-                {selectedTaskForDetails.stage.head_instructions && (
-                  <span className="text-[10px] font-bold text-teal-300 bg-teal-500/15 px-2.5 py-0.5 rounded-full border border-teal-500/25">
-                    توجيهات مسجلة
-                  </span>
-                )}
-              </div>
 
-              <Textarea
-                rows={4}
-                value={editingTaskDesc}
-                onChange={(e) => setEditingTaskDesc(e.target.value)}
-                placeholder="اكتب هنا توجيهاتك الفنية الخاصة للموظف لتنفيذ هذه المهمة بالشكل المطلوب..."
-                className="w-full text-xs leading-relaxed bg-slate-950/90 border-slate-700/80 focus:border-teal-400 rounded-xl"
-              />
+                {/* Head Instructions to Employee */}
+                <div className="bg-slate-950/70 border border-teal-500/20 rounded-xl p-4 space-y-3 relative shadow-sm">
+                  <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                    <div>
+                      <h4 className="text-xs font-bold text-teal-300 flex items-center gap-1.5">
+                        <span>✍️</span>
+                        <span>توجيهات رئيس القسم للموظف:</span>
+                      </h4>
+                      <p className="text-[10px] text-slate-400 mt-0.5">
+                        تصل للموظف كتعليمات فنية مباشرة للتنفيذ
+                      </p>
+                    </div>
+                    {selectedTaskForDetails.stage.head_instructions && (
+                      <span className="text-[10px] font-bold text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">
+                        محدثة
+                      </span>
+                    )}
+                  </div>
 
-              <div className="flex items-center justify-between pt-1">
-                {saveDescSuccess ? (
-                  <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5 animate-fadeIn">
-                    <Check className="w-4 h-4 text-emerald-400" />
-                    <span>تم حفظ التوجيهات بنجاح!</span>
-                  </span>
-                ) : (
-                  <span className="text-[11px] text-slate-400">
-                    يمكنك تعديل التوجيهات وحفظها في أي وقت
-                  </span>
-                )}
+                  <Textarea
+                    rows={4}
+                    value={editingTaskDesc}
+                    onChange={(e) => setEditingTaskDesc(e.target.value)}
+                    placeholder="اكتب هنا توجيهاتك الفنية للموظف (نقاط العمل، التفاصيل المطلوبة، الزوايا الفنية)..."
+                    className="w-full text-xs leading-relaxed bg-slate-900 border-slate-700/80 focus:border-teal-400 rounded-xl p-3 text-slate-100 placeholder:text-slate-500"
+                  />
 
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="primary"
-                  onClick={handleSaveHeadInstructions}
-                  disabled={isSavingTaskDesc}
-                  className="bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shadow-md"
-                >
-                  {isSavingTaskDesc ? 'جاري الحفظ...' : '💾 حفظ التوجيهات'}
-                </Button>
-              </div>
-            </div>
+                  <div className="flex items-center justify-between pt-1">
+                    {saveDescSuccess ? (
+                      <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5 animate-fadeIn">
+                        <Check className="w-3.5 h-3.5" />
+                        <span>تم حفظ التوجيهات بنجاح!</span>
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-slate-500">
+                        يمكنك تعديل التوجيهات وحفظها في أي وقت
+                      </span>
+                    )}
 
-            {/* SECTION 3: Store & Client Data Grid */}
-            <div className="space-y-2">
-              <span className="text-xs font-bold text-slate-300 block">بيانات المتجر والطلب:</span>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
-                  <span className="text-[10px] text-gray-400 block font-medium">اسم المتجر:</span>
-                  <span className="text-xs font-bold text-white">{selectedTaskForDetails.client.company_name}</span>
-                </div>
-                <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
-                  <span className="text-[10px] text-gray-400 block font-medium">اسم العميل المسؤول:</span>
-                  <span className="text-xs font-bold text-slate-200">{selectedTaskForDetails.client.name}</span>
-                </div>
-                <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
-                  <span className="text-[10px] text-gray-400 block font-medium">المنصة:</span>
-                  <span className="text-xs font-bold text-indigo-300">{selectedTaskForDetails.client.platform || 'زد'}</span>
-                </div>
-                <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
-                  <span className="text-[10px] text-gray-400 block font-medium">الباقة المختارة:</span>
-                  <span className="text-xs font-bold text-amber-300">{selectedTaskForDetails.client.package_name || selectedTaskForDetails.client.service_type || 'باقة متكاملة'}</span>
-                </div>
-                <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
-                  <span className="text-[10px] text-gray-400 block font-medium">إيميل الوكالة المخصص:</span>
-                  <span className="text-xs font-bold text-indigo-300 font-mono select-all truncate block mt-0.5">{selectedTaskForDetails.client.agency_email || 'غير محدد'}</span>
-                </div>
-                <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
-                  <span className="text-[10px] text-gray-400 block font-medium">رقم الهاتف:</span>
-                  <span className="text-xs font-bold text-gray-300 font-mono block mt-0.5">{selectedTaskForDetails.client.phone || 'غير مسجل'}</span>
-                </div>
-                {selectedTaskForDetails.client.website_url && (
-                  <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 sm:col-span-3">
-                    <span className="text-[10px] text-gray-400 block font-medium">رابط الموقع / المتجر:</span>
-                    <a
-                      href={selectedTaskForDetails.client.website_url.startsWith('http') ? selectedTaskForDetails.client.website_url : `https://${selectedTaskForDetails.client.website_url}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-xs font-bold text-cyan-400 hover:underline font-mono truncate block mt-0.5"
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="primary"
+                      onClick={handleSaveHeadInstructions}
+                      disabled={isSavingTaskDesc}
+                      className="bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shadow-sm px-4"
                     >
-                      {selectedTaskForDetails.client.website_url} ↗
-                    </a>
+                      {isSavingTaskDesc ? 'جاري الحفظ...' : 'حفظ التوجيهات'}
+                    </Button>
                   </div>
-                )}
+                </div>
               </div>
+
+              {/* Left Column: Metadata & Store Specs Sidebar (5 / 12) */}
+              <div className="lg:col-span-5 space-y-4">
+                
+                {/* Assigned Member Card */}
+                <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2.5 shadow-sm">
+                  <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">الموظف المكلف بالمهمة</span>
+                  {(() => {
+                    const mem = members.find(m => m.id === selectedTaskForDetails.stage.assigned_member_id);
+                    if (mem) {
+                      return (
+                        <div className="flex items-center justify-between bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 flex items-center justify-center font-bold text-xs shrink-0">
+                              {mem.name.slice(0, 1)}
+                            </div>
+                            <div>
+                              <span className="text-xs font-bold text-white block">{mem.name}</span>
+                              <span className="text-[10px] text-slate-400 block">{mem.role}</span>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const cl = selectedTaskForDetails.client;
+                              const st = selectedTaskForDetails.stage;
+                              setSelectedTaskForDetails(null);
+                              setSelectedStageForAssignment({ client: cl, stage: st });
+                              setAssignmentSelectedMemberId(mem.id);
+                              setAssignmentInstructions(editingTaskDesc || st.head_instructions || '');
+                            }}
+                            className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                            title="تحويل لموظف آخر"
+                          >
+                            <Edit className="w-3.5 h-3.5 text-indigo-400" />
+                          </button>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="flex items-center justify-between bg-amber-500/5 p-2.5 rounded-lg border border-amber-500/20">
+                        <span className="text-xs text-amber-400 font-bold flex items-center gap-1">
+                          <span>⚠️ لم يتم التعيين بعد</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const cl = selectedTaskForDetails.client;
+                            const st = selectedTaskForDetails.stage;
+                            setSelectedTaskForDetails(null);
+                            setSelectedStageForAssignment({ client: cl, stage: st });
+                            const defaultEmp = deptMembers.find(m => m.id !== currentMember.id);
+                            setAssignmentSelectedMemberId(defaultEmp ? defaultEmp.id : '');
+                            setAssignmentInstructions(editingTaskDesc || st.head_instructions || '');
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30 text-xs font-bold transition-all cursor-pointer"
+                        >
+                          تعيين موظف
+                        </button>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* Store & Project Specs */}
+                <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2.5 text-xs shadow-sm">
+                  <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">تفاصيل المتجر والطلب</span>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between border-b border-slate-850 pb-1.5">
+                      <span className="text-slate-400 text-[11px]">المنصة:</span>
+                      <span className="text-slate-200 font-bold">{selectedTaskForDetails.client.platform || 'زد'}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between border-b border-slate-850 pb-1.5">
+                      <span className="text-slate-400 text-[11px]">الباقة / الخدمة:</span>
+                      <span className="text-amber-300 font-bold text-[11px]">{selectedTaskForDetails.client.package_name || selectedTaskForDetails.client.service_type || 'باقة متكاملة'}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between border-b border-slate-850 pb-1.5">
+                      <span className="text-slate-400 text-[11px]">إيميل الوكالة:</span>
+                      <span className="text-indigo-300 font-mono text-[11px] select-all truncate max-w-[150px]">{selectedTaskForDetails.client.agency_email || 'غير محدد'}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between border-b border-slate-850 pb-1.5">
+                      <span className="text-slate-400 text-[11px]">رقم الهاتف:</span>
+                      <span className="text-slate-300 font-mono text-[11px]">{selectedTaskForDetails.client.phone || 'غير مسجل'}</span>
+                    </div>
+
+                    {selectedTaskForDetails.client.website_url && (
+                      <div className="pt-0.5">
+                        <span className="text-slate-400 text-[11px] block mb-0.5">رابط المتجر:</span>
+                        <a
+                          href={selectedTaskForDetails.client.website_url.startsWith('http') ? selectedTaskForDetails.client.website_url : `https://${selectedTaskForDetails.client.website_url}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-cyan-400 hover:underline font-mono text-[11px] truncate block"
+                        >
+                          {selectedTaskForDetails.client.website_url} ↗
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+              </div>
+
             </div>
 
-            {/* Action buttons */}
-            <div className="flex items-center justify-between pt-3 border-t border-slate-800 text-xs">
+            {/* 3. Modal Footer */}
+            <div className="px-6 py-3.5 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between shrink-0 text-xs">
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const cl = selectedTaskForDetails.client;
-                    const st = selectedTaskForDetails.stage;
-                    setSelectedTaskForDetails(null);
-                    setSelectedStageForAssignment({ client: cl, stage: st });
-                    const defaultEmp = deptMembers.find(m => m.id !== currentMember.id);
-                    setAssignmentSelectedMemberId(st.assigned_member_id || (defaultEmp ? defaultEmp.id : ''));
-                    setAssignmentInstructions(editingTaskDesc || st.head_instructions || '');
-                  }}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-md shadow-amber-500/20"
-                >
-                  <UserPlus className="w-3.5 h-3.5" />
-                  <span>إسناد / توجيه لموظف</span>
-                </button>
-                <button
-                  type="button"
+                <Button
+                  variant="outline"
+                  size="sm"
+                  icon={<FolderGit2 className="w-3.5 h-3.5 text-amber-400" />}
                   onClick={() => onOpenDriveModal(selectedTaskForDetails.client)}
-                  className="px-4 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
-                  <FolderGit2 className="w-3.5 h-3.5" />
-                  <span>ملفات Google Drive</span>
-                </button>
+                  ملفات Drive
+                </Button>
+                {onOpenHistoryModal && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={<History className="w-3.5 h-3.5 text-indigo-400" />}
+                    onClick={() => onOpenHistoryModal(selectedTaskForDetails.stage, selectedTaskForDetails.client)}
+                  >
+                    سجل الدورة
+                  </Button>
+                )}
               </div>
 
-              <button
-                type="button"
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => setSelectedTaskForDetails(null)}
-                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold transition-colors cursor-pointer"
               >
                 إغلاق
-              </button>
+              </Button>
             </div>
+
           </div>
         </div>
       )}
@@ -1343,4 +1382,5 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
     </div>
   );
 };
+
 

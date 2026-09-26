@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import confetti from 'canvas-confetti';
 import { 
   CheckCircle2, Clock, FolderGit2, Send, Building2,
-  AlertTriangle, RotateCcw, ExternalLink, ShieldCheck, History
+  AlertTriangle, RotateCcw, ExternalLink, ShieldCheck, History, FileText
 } from 'lucide-react';
 import type { Client, TeamMember, TaskStage } from '../types';
 import { Button } from './ui/Button';
@@ -33,7 +33,7 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'todo' | 'revisions' | 'review' | 'done'>('todo');
   const [selectedStageToSubmit, setSelectedStageToSubmit] = useState<{ client: Client; stage: TaskStage } | null>(null);
-  const [selectedClientForDetails, setSelectedClientForDetails] = useState<Client | null>(null);
+  const [selectedTaskForDetails, setSelectedTaskForDetails] = useState<{ client: Client; stage: TaskStage } | null>(null);
   const [deliverableNote, setDeliverableNote] = useState('');
   const [deliverableUrl, setDeliverableUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -183,10 +183,10 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
                 <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-800">
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => setSelectedClientForDetails(client)}
+                      onClick={() => setSelectedTaskForDetails({ client, stage })}
                       className="text-[11px] text-teal-400 hover:text-teal-300 font-bold"
                     >
-                      تفاصيل الطلب ↗
+                      وصف وتفاصيل المهمة ↗
                     </button>
                     <button
                       onClick={() => onOpenDriveModal(client)}
@@ -319,16 +319,16 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
                     </div>
 
                     {/* Task Title & Description */}
-                    <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1">
+                    <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1.5">
                       <span className="text-[10px] text-slate-400 block font-medium">اسم المهمة:</span>
                       <h4 className="text-xs sm:text-sm font-black text-white">{stage.stage_name}</h4>
-                      {stage.description && (
+                      {(stage.description || client.request_details) && (
                         <div className="pt-2 mt-1.5 border-t border-slate-800">
                           <span className="text-[10px] font-bold text-amber-400 flex items-center gap-1 mb-1">
-                            <span>💬 توجيهات وملاحظات العمل من رئيس القسم:</span>
+                            <span>💬 وصف وتوجيهات تنفيذ المهمة:</span>
                           </span>
                           <p className="text-xs text-slate-200 leading-relaxed bg-slate-900/90 p-2.5 rounded-xl border border-white/5 whitespace-pre-wrap">
-                            {stage.description}
+                            {stage.description || client.request_details}
                           </p>
                         </div>
                       )}
@@ -339,10 +339,10 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
                       <div className="flex items-center gap-2.5">
                         <button
                           type="button"
-                          onClick={() => setSelectedClientForDetails(client)}
+                          onClick={() => setSelectedTaskForDetails({ client, stage })}
                           className="inline-flex items-center gap-1 text-teal-400 hover:text-teal-300 font-bold cursor-pointer"
                         >
-                          <span>تفاصيل الطلب ↗</span>
+                          <span>وصف وتفاصيل المهمة ↗</span>
                         </button>
                         <button
                           type="button"
@@ -551,92 +551,120 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
         </Modal>
       )}
 
-      {/* Client Details & Full Brief Modal */}
-      {selectedClientForDetails && (
+      {/* Task Details & Full Brief Modal */}
+      {selectedTaskForDetails && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
           <div className="glass-panel w-full max-w-2xl rounded-3xl p-6 border border-white/10 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+            {/* Header */}
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-400 border border-teal-500/30 flex items-center justify-center">
-                  <Building2 className="w-5 h-5" />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-teal-500/20 text-teal-400 border border-teal-500/30 flex items-center justify-center font-bold">
+                  <FileText className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-white">{selectedClientForDetails.company_name}</h3>
-                  <p className="text-xs text-gray-400">تفاصيل المتجر والطلب الكامل</p>
+                  <h3 className="text-base font-black text-white">{selectedTaskForDetails.stage.stage_name}</h3>
+                  <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
+                    <Building2 className="w-3.5 h-3.5 text-indigo-400" />
+                    <span className="text-white font-bold">{selectedTaskForDetails.client.company_name}</span>
+                    <span>•</span>
+                    <span>العميل: {selectedTaskForDetails.client.name}</span>
+                  </p>
                 </div>
               </div>
               <button
                 type="button"
-                onClick={() => setSelectedClientForDetails(null)}
+                onClick={() => setSelectedTaskForDetails(null)}
                 className="text-gray-400 hover:text-white font-bold p-1 rounded-lg hover:bg-white/10 cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            {/* Basic Info Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <div className="bg-slate-950/60 p-3 rounded-xl border border-white/5">
-                <span className="text-[10px] text-gray-400 block font-medium">اسم العميل المسؤول:</span>
-                <span className="text-xs font-bold text-white">{selectedClientForDetails.name}</span>
+            {/* Quick Status Bar */}
+            <div className="flex items-center justify-between gap-2 p-2.5 rounded-2xl bg-slate-950/70 border border-white/5 text-xs flex-wrap">
+              <div className="flex items-center gap-2">
+                <span className="text-slate-400">حالة المهمة:</span>
+                <StatusBadge status={selectedTaskForDetails.stage.status} size="sm" />
               </div>
-              <div className="bg-slate-950/60 p-3 rounded-xl border border-white/5">
-                <span className="text-[10px] text-gray-400 block font-medium">المنصة:</span>
-                <span className="text-xs font-bold text-indigo-300">{selectedClientForDetails.platform || 'زد'}</span>
-              </div>
-              <div className="bg-slate-950/60 p-3 rounded-xl border border-white/5">
-                <span className="text-[10px] text-gray-400 block font-medium">الباقة المختارة:</span>
-                <span className="text-xs font-bold text-amber-300">{selectedClientForDetails.service_type || 'باقة متكاملة'}</span>
-              </div>
-              <div className="bg-slate-950/60 p-3 rounded-xl border border-white/5">
-                <span className="text-[10px] text-gray-400 block font-medium">الأولوية:</span>
-                <div className="mt-0.5"><PriorityBadge priority={selectedClientForDetails.priority} /></div>
-              </div>
-              <div className="bg-slate-950/60 p-3 rounded-xl border border-white/5">
-                <span className="text-[10px] text-gray-400 block font-medium">إيميل الوكالة المخصص:</span>
-                <span className="text-xs font-bold text-gray-300 font-mono select-all truncate block mt-0.5">{selectedClientForDetails.agency_email || 'غير محدد'}</span>
-              </div>
-              <div className="bg-slate-950/60 p-3 rounded-xl border border-white/5">
-                <span className="text-[10px] text-gray-400 block font-medium">رقم الهاتف:</span>
-                <span className="text-xs font-bold text-gray-300 font-mono block mt-0.5">{selectedClientForDetails.phone || 'غير مسجل'}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-slate-400">الأولوية:</span>
+                <PriorityBadge priority={selectedTaskForDetails.client.priority} />
               </div>
             </div>
 
-            {/* General Notes from Management */}
-            {selectedClientForDetails.request_details && (
-              <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-1">
-                <span className="text-[11px] font-bold text-amber-300 block">ملاحظات وتوجيهات الإدارة العامة:</span>
-                <p className="text-xs text-amber-100/90 leading-relaxed">{selectedClientForDetails.request_details}</p>
-              </div>
-            )}
-
-            {/* Stages & Department Tasks Overview */}
-            {selectedClientForDetails.stages && selectedClientForDetails.stages.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-xs font-bold text-gray-300 flex items-center gap-1.5">
-                  <span>خطة عمل المشروع ومراحله:</span>
-                </h4>
-                <div className="space-y-1.5">
-                  {selectedClientForDetails.stages.map((stg) => (
-                    <div key={stg.id} className="p-2.5 rounded-xl bg-slate-950 border border-white/5 flex items-center justify-between gap-2 text-xs">
-                      <div>
-                        <span className="font-bold text-white">{stg.stage_name}</span>
-                        {stg.description && (
-                          <p className="text-[10px] text-slate-400 mt-0.5 line-clamp-1">{stg.description}</p>
-                        )}
-                      </div>
-                      <StatusBadge status={stg.status} size="sm" />
-                    </div>
-                  ))}
+            {/* SECTION 1: Task Instructions & Brief */}
+            {(selectedTaskForDetails.stage.description || selectedTaskForDetails.client.request_details) && (
+              <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 space-y-2">
+                <span className="text-xs font-bold text-indigo-300 block flex items-center gap-1.5">
+                  <span>📝</span>
+                  <span>وصف وتوجيهات تنفيذ المهمة (Task Brief):</span>
+                </span>
+                <div className="p-3 rounded-xl bg-slate-950/90 border border-slate-800 text-xs text-slate-200 leading-relaxed whitespace-pre-wrap">
+                  {selectedTaskForDetails.stage.description || selectedTaskForDetails.client.request_details}
                 </div>
               </div>
             )}
+
+            {/* Revision Notes if any */}
+            {selectedTaskForDetails.stage.revision_notes && (
+              <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 space-y-1">
+                <span className="text-[11px] font-bold text-rose-300 block flex items-center gap-1">
+                  <span>⚠️</span>
+                  <span>ملاحظات التعديل المطلوبة من رئيس القسم:</span>
+                </span>
+                <p className="text-xs text-rose-100 leading-relaxed whitespace-pre-wrap">{selectedTaskForDetails.stage.revision_notes}</p>
+              </div>
+            )}
+
+            {/* SECTION 2: Basic Info Grid */}
+            <div className="space-y-1.5">
+              <span className="text-xs font-bold text-slate-300 block">بيانات المتجر والطلب:</span>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                <div className="bg-slate-950/60 p-2.5 rounded-xl border border-white/5">
+                  <span className="text-[10px] text-gray-400 block font-medium">اسم المتجر:</span>
+                  <span className="text-xs font-bold text-white">{selectedTaskForDetails.client.company_name}</span>
+                </div>
+                <div className="bg-slate-950/60 p-2.5 rounded-xl border border-white/5">
+                  <span className="text-[10px] text-gray-400 block font-medium">اسم العميل المسؤول:</span>
+                  <span className="text-xs font-bold text-slate-200">{selectedTaskForDetails.client.name}</span>
+                </div>
+                <div className="bg-slate-950/60 p-2.5 rounded-xl border border-white/5">
+                  <span className="text-[10px] text-gray-400 block font-medium">المنصة:</span>
+                  <span className="text-xs font-bold text-indigo-300">{selectedTaskForDetails.client.platform || 'زد'}</span>
+                </div>
+                <div className="bg-slate-950/60 p-2.5 rounded-xl border border-white/5">
+                  <span className="text-[10px] text-gray-400 block font-medium">الباقة المختارة:</span>
+                  <span className="text-xs font-bold text-amber-300">{selectedTaskForDetails.client.package_name || selectedTaskForDetails.client.service_type || 'باقة متكاملة'}</span>
+                </div>
+                <div className="bg-slate-950/60 p-2.5 rounded-xl border border-white/5">
+                  <span className="text-[10px] text-gray-400 block font-medium">إيميل الوكالة المخصص:</span>
+                  <span className="text-xs font-bold text-indigo-300 font-mono select-all truncate block mt-0.5">{selectedTaskForDetails.client.agency_email || 'غير محدد'}</span>
+                </div>
+                <div className="bg-slate-950/60 p-2.5 rounded-xl border border-white/5">
+                  <span className="text-[10px] text-gray-400 block font-medium">رقم الهاتف:</span>
+                  <span className="text-xs font-bold text-gray-300 font-mono block mt-0.5">{selectedTaskForDetails.client.phone || 'غير مسجل'}</span>
+                </div>
+                {selectedTaskForDetails.client.website_url && (
+                  <div className="bg-slate-950/60 p-2.5 rounded-xl border border-white/5 sm:col-span-3">
+                    <span className="text-[10px] text-gray-400 block font-medium">رابط الموقع / المتجر:</span>
+                    <a
+                      href={selectedTaskForDetails.client.website_url.startsWith('http') ? selectedTaskForDetails.client.website_url : `https://${selectedTaskForDetails.client.website_url}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs font-bold text-cyan-400 hover:underline font-mono truncate block mt-0.5"
+                    >
+                      {selectedTaskForDetails.client.website_url} ↗
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
 
             {/* Action buttons */}
             <div className="flex items-center justify-between pt-3 border-t border-white/10 text-xs">
               <button
                 type="button"
-                onClick={() => onOpenDriveModal(selectedClientForDetails)}
+                onClick={() => onOpenDriveModal(selectedTaskForDetails.client)}
                 className="px-4 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <FolderGit2 className="w-3.5 h-3.5" />
@@ -644,7 +672,7 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => setSelectedClientForDetails(null)}
+                onClick={() => setSelectedTaskForDetails(null)}
                 className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold transition-colors cursor-pointer"
               >
                 إغلاق

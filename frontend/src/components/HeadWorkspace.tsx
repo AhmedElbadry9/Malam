@@ -64,8 +64,11 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
   const [assignmentInstructions, setAssignmentInstructions] = useState('');
   const [isSubmittingAssignment, setIsSubmittingAssignment] = useState(false);
 
-  // Client Details Modal State
-  const [selectedClientForDetails, setSelectedClientForDetails] = useState<Client | null>(null);
+  // Task & Brief Details Modal State
+  const [selectedTaskForDetails, setSelectedTaskForDetails] = useState<{ client: Client; stage: TaskStage } | null>(null);
+  const [editingTaskDesc, setEditingTaskDesc] = useState('');
+  const [isSavingTaskDesc, setIsSavingTaskDesc] = useState(false);
+  const [saveDescSuccess, setSaveDescSuccess] = useState(false);
 
   // Review modal state
   const [selectedReviewStage, setSelectedReviewStage] = useState<{ client: Client; stage: TaskStage } | null>(null);
@@ -180,6 +183,34 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
       alert('فشل إسناد المهمة. يرجى المحاولة مجدداً.');
     } finally {
       setIsSubmittingAssignment(false);
+    }
+  };
+
+  const handleSaveTaskDescription = async () => {
+    if (!selectedTaskForDetails) return;
+    try {
+      setIsSavingTaskDesc(true);
+      await onUpdateAssignment(
+        selectedTaskForDetails.client.id,
+        selectedTaskForDetails.stage.id,
+        {
+          description: editingTaskDesc.trim() || undefined
+        }
+      );
+      setSelectedTaskForDetails(prev => prev ? {
+        ...prev,
+        stage: {
+          ...prev.stage,
+          description: editingTaskDesc.trim() || undefined
+        }
+      } : null);
+      setSaveDescSuccess(true);
+      setTimeout(() => setSaveDescSuccess(false), 2500);
+    } catch (err) {
+      console.error(err);
+      alert('فشل حفظ توجيهات المهمة. يرجى المحاولة مجدداً.');
+    } finally {
+      setIsSavingTaskDesc(false);
     }
   };
 
@@ -483,9 +514,12 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                         <td className="p-3.5 text-center">
                           <button
                             type="button"
-                            onClick={() => setSelectedClientForDetails(client)}
+                            onClick={() => {
+                              setSelectedTaskForDetails({ client, stage });
+                              setEditingTaskDesc(stage.description || client.request_details || '');
+                            }}
                             className="group cursor-pointer hover:bg-white/5 p-1.5 rounded-xl transition-all block w-full text-center"
-                            title="عرض ملف وتفاصيل العميل والطلب بالكامل"
+                            title="عرض تفاصيل المهمة وبيانات المتجر والطلب"
                           >
                             <div className="font-bold text-white text-sm group-hover:text-teal-300 flex items-center justify-center gap-1.5">
                               <span>{client.company_name}</span>
@@ -495,8 +529,31 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                           </button>
                         </td>
                         <td className="p-3.5 font-bold text-slate-200 text-center">
-                          <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                            <span>{stage.stage_name}</span>
+                          <div className="flex flex-col items-center justify-center gap-1">
+                            <span className="text-white text-xs">{stage.stage_name}</span>
+                            {(stage.description || client.request_details) ? (
+                              <div
+                                onClick={() => {
+                                  setSelectedTaskForDetails({ client, stage });
+                                  setEditingTaskDesc(stage.description || client.request_details || '');
+                                }}
+                                className="max-w-[240px] text-[10px] text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 rounded-lg truncate cursor-pointer transition-colors"
+                                title={stage.description || client.request_details}
+                              >
+                                💬 {stage.description || client.request_details}
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedTaskForDetails({ client, stage });
+                                  setEditingTaskDesc('');
+                                }}
+                                className="text-[10px] text-slate-500 hover:text-indigo-300 flex items-center gap-1 cursor-pointer transition-colors"
+                              >
+                                + إضافة توجيهات للمهمة
+                              </button>
+                            )}
                             {(isUnassigned || isAssignedToMe) && (
                               <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse">
                                 بانتظار تعيين موظف
@@ -518,7 +575,7 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                                       setSelectedStageForAssignment({ client, stage });
                                       const defaultEmp = deptMembers.find(m => m.id !== currentMember.id);
                                       setAssignmentSelectedMemberId(defaultEmp ? defaultEmp.id : '');
-                                      setAssignmentInstructions(stage.description || '');
+                                      setAssignmentInstructions(stage.description || client.request_details || '');
                                     }}
                                     className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-md shadow-amber-500/20 active:scale-95 transition-all cursor-pointer border border-amber-300/40"
                                   >
@@ -541,7 +598,7 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                                     onClick={() => {
                                       setSelectedStageForAssignment({ client, stage });
                                       setAssignmentSelectedMemberId(assignedMem.id);
-                                      setAssignmentInstructions(stage.description || '');
+                                      setAssignmentInstructions(stage.description || client.request_details || '');
                                     }}
                                     className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
                                     title="تحويل لموظف آخر أو تعديل التوجيهات"
@@ -569,10 +626,13 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                               variant="ghost"
                               size="sm"
                               icon={<FileText className="w-3.5 h-3.5 text-teal-400" />}
-                              onClick={() => setSelectedClientForDetails(client)}
-                              title="عرض تفاصيل وبيانات العميل والطلب"
+                              onClick={() => {
+                                setSelectedTaskForDetails({ client, stage });
+                                setEditingTaskDesc(stage.description || client.request_details || '');
+                              }}
+                              title="عرض وتعديل وصف وتوجيهات المهمة وبيانات المتجر"
                             >
-                              تفاصيل الطلب
+                              وصف وتفاصيل المهمة
                             </Button>
                             <Button
                               variant="ghost"
@@ -1047,103 +1107,191 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
         </div>
       )}
 
-      {/* Client Details & Brief Modal */}
-      {selectedClientForDetails && (
+      {/* Task Details & Brief Directives Modal */}
+      {selectedTaskForDetails && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
           <div className="glass-panel w-full max-w-2xl rounded-3xl p-6 border border-white/10 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+            {/* Header */}
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-400 border border-teal-500/30 flex items-center justify-center">
-                  <Building2 className="w-5 h-5" />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-teal-500/20 text-teal-400 border border-teal-500/30 flex items-center justify-center font-bold">
+                  <FileText className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-white">{selectedClientForDetails.company_name}</h3>
-                  <p className="text-xs text-gray-400">ملف العميل والطلب الكامل</p>
+                  <h3 className="text-base font-black text-white flex items-center gap-2">
+                    <span>{selectedTaskForDetails.stage.stage_name}</span>
+                  </h3>
+                  <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
+                    <Building2 className="w-3.5 h-3.5 text-indigo-400" />
+                    <span className="text-white font-bold">{selectedTaskForDetails.client.company_name}</span>
+                    <span>•</span>
+                    <span>العميل: {selectedTaskForDetails.client.name}</span>
+                  </p>
                 </div>
               </div>
               <button
                 type="button"
-                onClick={() => setSelectedClientForDetails(null)}
+                onClick={() => setSelectedTaskForDetails(null)}
                 className="text-gray-400 hover:text-white font-bold p-1 rounded-lg hover:bg-white/10 cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            {/* Basic Info Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <div className="bg-slate-950/60 p-3 rounded-xl border border-white/5">
-                <span className="text-[10px] text-gray-400 block font-medium">اسم العميل المسؤول:</span>
-                <span className="text-xs font-bold text-white">{selectedClientForDetails.name}</span>
+            {/* Quick Status Bar */}
+            <div className="flex items-center justify-between gap-2 p-2.5 rounded-2xl bg-slate-950/70 border border-white/5 text-xs flex-wrap">
+              <div className="flex items-center gap-2">
+                <span className="text-slate-400">حالة المهمة:</span>
+                <StatusBadge status={selectedTaskForDetails.stage.status} size="sm" />
               </div>
-              <div className="bg-slate-950/60 p-3 rounded-xl border border-white/5">
-                <span className="text-[10px] text-gray-400 block font-medium">المنصة:</span>
-                <span className="text-xs font-bold text-indigo-300">{selectedClientForDetails.platform || 'زد'}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-slate-400">الأولوية:</span>
+                <PriorityBadge priority={selectedTaskForDetails.client.priority} />
               </div>
-              <div className="bg-slate-950/60 p-3 rounded-xl border border-white/5">
-                <span className="text-[10px] text-gray-400 block font-medium">الباقة المختارة:</span>
-                <span className="text-xs font-bold text-amber-300">{selectedClientForDetails.service_type || 'باقة متكاملة'}</span>
-              </div>
-              <div className="bg-slate-950/60 p-3 rounded-xl border border-white/5">
-                <span className="text-[10px] text-gray-400 block font-medium">الأولوية:</span>
-                <div className="mt-0.5"><PriorityBadge priority={selectedClientForDetails.priority} /></div>
-              </div>
-              <div className="bg-slate-950/60 p-3 rounded-xl border border-white/5">
-                <span className="text-[10px] text-gray-400 block font-medium">إيميل الوكالة المخصص:</span>
-                <span className="text-xs font-bold text-gray-300 font-mono select-all truncate block mt-0.5">{selectedClientForDetails.agency_email || 'غير محدد'}</span>
-              </div>
-              <div className="bg-slate-950/60 p-3 rounded-xl border border-white/5">
-                <span className="text-[10px] text-gray-400 block font-medium">رقم الهاتف:</span>
-                <span className="text-xs font-bold text-gray-300 font-mono block mt-0.5">{selectedClientForDetails.phone || 'غير مسجل'}</span>
+              <div className="flex items-center gap-1.5 text-indigo-300 font-bold">
+                <span>المكلف: </span>
+                {(() => {
+                  const mem = members.find(m => m.id === selectedTaskForDetails.stage.assigned_member_id);
+                  return mem ? (
+                    <span className="text-white">👤 {mem.name} ({mem.role})</span>
+                  ) : (
+                    <span className="text-amber-400">⚠️ بانتظار تعيين موظف</span>
+                  );
+                })()}
               </div>
             </div>
 
-            {/* General Notes from Management */}
-            {selectedClientForDetails.request_details && (
+            {/* SECTION 1: Task Instructions & Brief (Editable by Head) */}
+            <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
+                  <span>📝</span>
+                  <span>وصف وتوجيهات تنفيذ المهمة للموظف (Task Brief):</span>
+                </label>
+                <span className="text-[10px] text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded-md border border-teal-500/20 font-medium">
+                  تظهر للموظف مباشرة في مساحة عمله
+                </span>
+              </div>
+
+              <Textarea
+                rows={4}
+                value={editingTaskDesc}
+                onChange={(e) => setEditingTaskDesc(e.target.value)}
+                placeholder="اكتب هنا بالتفصيل وصف التاسك للموظف، متطلبات التصميم أو المحتوى، النقاط الواجب التركيز عليها، والمراجع..."
+                className="w-full text-xs leading-relaxed bg-slate-950/90 border-slate-700"
+              />
+
+              <div className="flex items-center justify-between pt-1">
+                {saveDescSuccess ? (
+                  <span className="text-xs font-bold text-emerald-400 flex items-center gap-1 animate-fadeIn">
+                    <Check className="w-4 h-4" />
+                    <span>تم حفظ وتحديث التوجيهات بنجاح!</span>
+                  </span>
+                ) : (
+                  <span className="text-[11px] text-slate-400">
+                    يمكنك تعديل وحفظ الوصف في أي وقت وسيصل للموظف فوراً
+                  </span>
+                )}
+
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="primary"
+                  onClick={handleSaveTaskDescription}
+                  disabled={isSavingTaskDesc}
+                >
+                  {isSavingTaskDesc ? 'جاري الحفظ...' : '💾 حفظ وتحديث التوجيهات للموظف'}
+                </Button>
+              </div>
+            </div>
+
+            {/* SECTION 1.5: General Admin Request Details (if present) */}
+            {selectedTaskForDetails.client.request_details && (
               <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-1">
-                <span className="text-[11px] font-bold text-amber-300 block">ملاحظات وتوجيهات الإدارة العامة:</span>
-                <p className="text-xs text-amber-100/90 leading-relaxed">{selectedClientForDetails.request_details}</p>
+                <span className="text-[11px] font-bold text-amber-300 block flex items-center gap-1">
+                  <span>🏢</span>
+                  <span>ملاحظات وتفاصيل الطلب من الإدارة العامة:</span>
+                </span>
+                <p className="text-xs text-amber-100/90 leading-relaxed whitespace-pre-wrap">{selectedTaskForDetails.client.request_details}</p>
               </div>
             )}
 
-            {/* Stages & Department Tasks Overview */}
-            {selectedClientForDetails.stages && selectedClientForDetails.stages.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-xs font-bold text-gray-300 flex items-center gap-1.5">
-                  <span>خطة عمل العميل وتوزيع المراحل:</span>
-                </h4>
-                <div className="space-y-1.5">
-                  {selectedClientForDetails.stages.map((stg) => {
-                    const mem = members.find(m => m.id === stg.assigned_member_id);
-                    return (
-                      <div key={stg.id} className="p-2.5 rounded-xl bg-slate-950 border border-white/5 flex items-center justify-between gap-2 text-xs">
-                        <div>
-                          <span className="font-bold text-white">{stg.stage_name}</span>
-                          <span className="text-[10px] text-gray-400 block mt-0.5">
-                            {mem ? `المكلف: ${mem.name} (${mem.role})` : '⚠️ بانتظار التعيين'}
-                          </span>
-                        </div>
-                        <StatusBadge status={stg.status} size="sm" />
-                      </div>
-                    );
-                  })}
+            {/* SECTION 2: Basic Client & Store Info Grid */}
+            <div className="space-y-1.5">
+              <span className="text-xs font-bold text-slate-300 block">بيانات المتجر والطلب:</span>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                <div className="bg-slate-950/60 p-2.5 rounded-xl border border-white/5">
+                  <span className="text-[10px] text-gray-400 block font-medium">اسم المتجر:</span>
+                  <span className="text-xs font-bold text-white">{selectedTaskForDetails.client.company_name}</span>
                 </div>
+                <div className="bg-slate-950/60 p-2.5 rounded-xl border border-white/5">
+                  <span className="text-[10px] text-gray-400 block font-medium">اسم العميل المسؤول:</span>
+                  <span className="text-xs font-bold text-slate-200">{selectedTaskForDetails.client.name}</span>
+                </div>
+                <div className="bg-slate-950/60 p-2.5 rounded-xl border border-white/5">
+                  <span className="text-[10px] text-gray-400 block font-medium">المنصة:</span>
+                  <span className="text-xs font-bold text-indigo-300">{selectedTaskForDetails.client.platform || 'زد'}</span>
+                </div>
+                <div className="bg-slate-950/60 p-2.5 rounded-xl border border-white/5">
+                  <span className="text-[10px] text-gray-400 block font-medium">الباقة المختارة:</span>
+                  <span className="text-xs font-bold text-amber-300">{selectedTaskForDetails.client.package_name || selectedTaskForDetails.client.service_type || 'باقة متكاملة'}</span>
+                </div>
+                <div className="bg-slate-950/60 p-2.5 rounded-xl border border-white/5">
+                  <span className="text-[10px] text-gray-400 block font-medium">إيميل الوكالة المخصص:</span>
+                  <span className="text-xs font-bold text-indigo-300 font-mono select-all truncate block mt-0.5">{selectedTaskForDetails.client.agency_email || 'غير محدد'}</span>
+                </div>
+                <div className="bg-slate-950/60 p-2.5 rounded-xl border border-white/5">
+                  <span className="text-[10px] text-gray-400 block font-medium">رقم الهاتف:</span>
+                  <span className="text-xs font-bold text-gray-300 font-mono block mt-0.5">{selectedTaskForDetails.client.phone || 'غير مسجل'}</span>
+                </div>
+                {selectedTaskForDetails.client.website_url && (
+                  <div className="bg-slate-950/60 p-2.5 rounded-xl border border-white/5 sm:col-span-3">
+                    <span className="text-[10px] text-gray-400 block font-medium">رابط الموقع / المتجر:</span>
+                    <a
+                      href={selectedTaskForDetails.client.website_url.startsWith('http') ? selectedTaskForDetails.client.website_url : `https://${selectedTaskForDetails.client.website_url}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs font-bold text-cyan-400 hover:underline font-mono truncate block mt-0.5"
+                    >
+                      {selectedTaskForDetails.client.website_url} ↗
+                    </a>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
 
             {/* Action buttons */}
             <div className="flex items-center justify-between pt-3 border-t border-white/10 text-xs">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const cl = selectedTaskForDetails.client;
+                    const st = selectedTaskForDetails.stage;
+                    setSelectedTaskForDetails(null);
+                    setSelectedStageForAssignment({ client: cl, stage: st });
+                    const defaultEmp = deptMembers.find(m => m.id !== currentMember.id);
+                    setAssignmentSelectedMemberId(st.assigned_member_id || (defaultEmp ? defaultEmp.id : ''));
+                    setAssignmentInstructions(editingTaskDesc || st.description || cl.request_details || '');
+                  }}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-md shadow-amber-500/20"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>إسناد / توجيه لموظف</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onOpenDriveModal(selectedTaskForDetails.client)}
+                  className="px-4 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <FolderGit2 className="w-3.5 h-3.5" />
+                  <span>ملفات Google Drive</span>
+                </button>
+              </div>
+
               <button
                 type="button"
-                onClick={() => onOpenDriveModal(selectedClientForDetails)}
-                className="px-4 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-              >
-                <FolderGit2 className="w-3.5 h-3.5" />
-                <span>فتح مجلدات Google Drive</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedClientForDetails(null)}
+                onClick={() => setSelectedTaskForDetails(null)}
                 className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold transition-colors cursor-pointer"
               >
                 إغلاق

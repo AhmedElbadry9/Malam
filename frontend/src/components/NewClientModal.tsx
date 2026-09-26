@@ -408,13 +408,15 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
         allTasks.push(g.new_custom_input.trim());
       }
 
+      const defaultDesc = g.notes.trim() || requestDetails.trim() || undefined;
+
       if (allTasks.length === 0) {
         const curDept = departments.find(d => Number(d.id) === Number(g.department_id));
         assignments.push({
           department_id: g.department_id,
           assigned_member_id: g.assigned_member_id,
           stage_name: `مهام ${curDept?.name_ar || 'القسم'}`,
-          description: g.notes.trim() || undefined
+          description: defaultDesc
         });
       } else {
         for (const t of allTasks) {
@@ -422,7 +424,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
             department_id: g.department_id,
             assigned_member_id: g.assigned_member_id,
             stage_name: t,
-            description: g.notes.trim() || undefined
+            description: defaultDesc
           });
         }
       }

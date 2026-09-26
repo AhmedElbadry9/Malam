@@ -190,13 +190,14 @@ def create_client_intake(db: Session, client_in: schemas.ClientCreate, current_u
         # 2. Dispatch Task Stages per Department & Member (Concurrent by default)
         for idx, stage_in in enumerate(client_in.assignments):
             assigned_by = stage_in.assigned_by_id or (current_user.id if current_user else None)
+            stage_desc = stage_in.description.strip() if stage_in.description else (client_in.request_details.strip() if client_in.request_details else None)
             stage = models.TaskStage(
                 client_id=client.id,
                 department_id=stage_in.department_id,
                 assigned_member_id=stage_in.assigned_member_id,
                 assigned_by_id=assigned_by,
                 stage_name=stage_in.stage_name.strip(),
-                description=stage_in.description.strip() if stage_in.description else None,
+                description=stage_desc,
                 status="in_progress",
                 order_index=idx
             )

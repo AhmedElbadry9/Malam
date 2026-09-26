@@ -21,7 +21,7 @@ interface HeadWorkspaceProps {
   clients: Client[];
   departments: Department[];
   members: TeamMember[];
-  onUpdateAssignment: (clientId: number, stageId: number, data: { assigned_member_id?: number | null; status?: string; description?: string }) => Promise<void>;
+  onUpdateAssignment: (clientId: number, stageId: number, data: { assigned_member_id?: number | null; status?: string; description?: string; head_instructions?: string }) => Promise<void>;
   onReviewTaskStage: (stageId: number, action: 'approve' | 'request_revision', feedbackNotes?: string) => Promise<void>;
   onSubmitForReview?: (stageId: number, note?: string, url?: string) => Promise<void>;
   onOpenDriveModal: (client: Client) => void;
@@ -172,7 +172,7 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
         selectedStageForAssignment.stage.id,
         {
           assigned_member_id: Number(assignmentSelectedMemberId),
-          description: assignmentInstructions.trim() || undefined
+          head_instructions: assignmentInstructions.trim() || undefined
         }
       );
       setSelectedStageForAssignment(null);
@@ -186,7 +186,7 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
     }
   };
 
-  const handleSaveTaskDescription = async () => {
+  const handleSaveHeadInstructions = async () => {
     if (!selectedTaskForDetails) return;
     try {
       setIsSavingTaskDesc(true);
@@ -194,14 +194,14 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
         selectedTaskForDetails.client.id,
         selectedTaskForDetails.stage.id,
         {
-          description: editingTaskDesc.trim() || undefined
+          head_instructions: editingTaskDesc.trim() || undefined
         }
       );
       setSelectedTaskForDetails(prev => prev ? {
         ...prev,
         stage: {
           ...prev.stage,
-          description: editingTaskDesc.trim() || undefined
+          head_instructions: editingTaskDesc.trim() || undefined
         }
       } : null);
       setSaveDescSuccess(true);
@@ -516,7 +516,7 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                             type="button"
                             onClick={() => {
                               setSelectedTaskForDetails({ client, stage });
-                              setEditingTaskDesc(stage.description || '');
+                              setEditingTaskDesc(stage.head_instructions || '');
                             }}
                             className="group cursor-pointer hover:bg-white/5 p-2 rounded-xl transition-all block w-full text-center"
                             title="عرض تفاصيل المهمة والمتجر"
@@ -532,28 +532,28 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                           <div className="flex flex-col items-center justify-center gap-1.5">
                             <span className="text-white text-xs font-bold">{stage.stage_name}</span>
                             <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                              {stage.description && (
+                              {stage.head_instructions && (
                                 <span
                                   onClick={() => {
                                     setSelectedTaskForDetails({ client, stage });
-                                    setEditingTaskDesc(stage.description || '');
+                                    setEditingTaskDesc(stage.head_instructions || '');
                                   }}
                                   className="inline-flex items-center gap-1 text-[10px] text-teal-300 bg-teal-500/15 hover:bg-teal-500/25 border border-teal-500/30 px-2 py-0.5 rounded-full cursor-pointer transition-colors"
-                                  title={stage.description}
+                                  title={stage.head_instructions}
                                 >
-                                  ✍️ توجيهات رئيس القسم
+                                  ✍️ توجيهاتي للموظف
                                 </span>
                               )}
-                              {client.request_details && !stage.description && (
+                              {(stage.description || client.request_details) && (
                                 <span
                                   onClick={() => {
                                     setSelectedTaskForDetails({ client, stage });
-                                    setEditingTaskDesc(stage.description || '');
+                                    setEditingTaskDesc(stage.head_instructions || '');
                                   }}
                                   className="inline-flex items-center gap-1 text-[10px] text-indigo-300 bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 px-2 py-0.5 rounded-full cursor-pointer transition-colors"
-                                  title={client.request_details}
+                                  title={stage.description || client.request_details || ''}
                                 >
-                                  📋 طلب الإدارة
+                                  📋 توجيهات الإدارة
                                 </span>
                               )}
                               {(isUnassigned || isAssignedToMe) && (
@@ -578,7 +578,7 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                                       setSelectedStageForAssignment({ client, stage });
                                       const defaultEmp = deptMembers.find(m => m.id !== currentMember.id);
                                       setAssignmentSelectedMemberId(defaultEmp ? defaultEmp.id : '');
-                                      setAssignmentInstructions(stage.description || '');
+                                      setAssignmentInstructions(stage.head_instructions || '');
                                     }}
                                     className="px-3.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 hover:text-amber-200 border border-amber-500/30 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
                                   >
@@ -601,7 +601,7 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                                     onClick={() => {
                                       setSelectedStageForAssignment({ client, stage });
                                       setAssignmentSelectedMemberId(assignedMem.id);
-                                      setAssignmentInstructions(stage.description || '');
+                                      setAssignmentInstructions(stage.head_instructions || '');
                                     }}
                                     className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
                                     title="تحويل لموظف آخر أو تعديل التوجيهات"
@@ -631,7 +631,7 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                               icon={<FileText className="w-3.5 h-3.5 text-teal-400" />}
                               onClick={() => {
                                 setSelectedTaskForDetails({ client, stage });
-                                setEditingTaskDesc(stage.description || '');
+                                setEditingTaskDesc(stage.head_instructions || '');
                               }}
                               title="عرض وتعديل توجيهات المهمة وبيانات المتجر"
                             >
@@ -1020,57 +1020,58 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
 
       {/* Assignment & Briefing Modal */}
       {selectedStageForAssignment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="glass-panel w-full max-w-lg rounded-3xl p-6 border border-white/10 space-y-5 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <h3 className="text-base font-black text-white flex items-center gap-2">
-                <UserPlus className="w-5 h-5 text-teal-400" />
-                <span>إسناد وتوجيه المهمة للموظف</span>
-              </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
+          <div className="glass-panel w-full max-w-lg rounded-3xl p-6 border border-slate-700/70 space-y-5 shadow-2xl bg-slate-900/95">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3.5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-teal-500/15 border border-teal-500/30 text-teal-400 flex items-center justify-center font-bold">
+                  <UserPlus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white">إسناد وتوجيه المهمة للموظف</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    {selectedStageForAssignment.client.company_name} • <span className="text-teal-300 font-bold">{selectedStageForAssignment.stage.stage_name}</span>
+                  </p>
+                </div>
+              </div>
               <button
                 type="button"
                 onClick={() => setSelectedStageForAssignment(null)}
-                className="text-gray-400 hover:text-white font-bold p-1 rounded-lg hover:bg-white/10 cursor-pointer"
+                className="text-gray-400 hover:text-white font-bold p-1.5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            {/* Task & Client Summary */}
-            <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-white/5 space-y-1.5 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400 font-medium">العميل / المتجر:</span>
-                <span className="font-bold text-white">{selectedStageForAssignment.client.company_name} ({selectedStageForAssignment.client.name})</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400 font-medium">المهمة المطلوب إنجازها:</span>
-                <span className="font-bold text-teal-300">{selectedStageForAssignment.stage.stage_name}</span>
-              </div>
-            </div>
-
-            {/* Admin Request Details Context (Read-Only Reference) */}
-            {selectedStageForAssignment.client.request_details && (
-              <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-                <span className="text-[11px] font-bold text-indigo-300 flex items-center gap-1.5">
-                  <span>📋</span>
-                  <span>محتوى ومتطلبات الطلب من الإدارة (مرجع للاطلاع):</span>
-                </span>
-                <p className="text-xs text-slate-300 leading-relaxed max-h-24 overflow-y-auto whitespace-pre-wrap bg-slate-950/70 p-2.5 rounded-xl border border-slate-800">
-                  {selectedStageForAssignment.client.request_details}
+            {/* Admin Management Brief Context (Read-Only) */}
+            {(selectedStageForAssignment.stage.description || selectedStageForAssignment.client.request_details) && (
+              <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>توجيهات ومتطلبات الإدارة (مرجع للاطلاع):</span>
+                  </span>
+                  <span className="text-[10px] text-slate-400 bg-slate-850 px-2 py-0.5 rounded border border-slate-750">
+                    من الإدارة
+                  </span>
+                </div>
+                <p className="text-xs text-slate-200 leading-relaxed max-h-28 overflow-y-auto whitespace-pre-wrap bg-slate-900/90 p-3 rounded-xl border border-slate-800/80 font-sans">
+                  {selectedStageForAssignment.stage.description || selectedStageForAssignment.client.request_details}
                 </p>
               </div>
             )}
 
             <form onSubmit={handleConfirmAssignment} className="space-y-4 text-xs">
               <div>
-                <label className="block font-bold text-gray-300 mb-1.5">
+                <label className="block font-bold text-slate-200 mb-1.5">
                   1. اختر الموظف المنفذ من فريق قسمك:
                 </label>
                 <select
                   required
                   value={assignmentSelectedMemberId}
                   onChange={(e) => setAssignmentSelectedMemberId(e.target.value ? Number(e.target.value) : '')}
-                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-white/10 text-white font-bold text-xs focus:outline-none focus:border-teal-500 cursor-pointer"
+                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white font-bold text-xs focus:outline-none focus:border-teal-500 cursor-pointer"
                 >
                   <option value="" disabled>-- اختر الموظف المنفذ --</option>
                   {deptMembers.filter(m => m.id !== currentMember.id).map(m => (
@@ -1082,23 +1083,23 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
               </div>
 
               <div>
-                <label className="block font-bold text-teal-300 mb-1.5 flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block font-bold text-teal-300 flex items-center gap-1.5">
                     <span>✍️</span>
-                    <span>2. توجيهات وتعليمات رئيس القسم للموظف (منفصلة):</span>
-                  </span>
-                  <span className="text-[10px] text-teal-400 font-normal">ستصل بشكل منفصل للموظف</span>
-                </label>
+                    <span>2. توجيهات وتعليمات رئيس القسم للموظف:</span>
+                  </label>
+                  <span className="text-[10px] text-slate-400">ستصل للموظف كتعليمات فنية منك</span>
+                </div>
                 <textarea
                   rows={4}
                   value={assignmentInstructions}
                   onChange={(e) => setAssignmentInstructions(e.target.value)}
-                  placeholder="اكتب هنا توجيهاتك الخاصة للموظف، متطلبات العمل، زوايا التنفيذ، أو أي ملاحظات فنية تود إضافتها..."
-                  className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-teal-500 text-white placeholder-slate-500 leading-relaxed text-xs resize-none"
+                  placeholder="اكتب هنا توجيهاتك الخاصة للموظف لتنفيذ هذه المهمة بالشكل الصحيح..."
+                  className="w-full p-3 rounded-xl bg-slate-950 border border-teal-500/30 focus:border-teal-400 text-white placeholder-slate-500 leading-relaxed text-xs resize-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-white/10">
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={() => setSelectedStageForAssignment(null)}
@@ -1109,7 +1110,7 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                 <button
                   type="submit"
                   disabled={!assignmentSelectedMemberId || isSubmittingAssignment}
-                  className="px-5 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-teal-600 via-teal-500 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white shadow-lg shadow-teal-600/30 transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-40 active:scale-95 border border-teal-400/30"
+                  className="px-5 py-2.5 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-500 text-white shadow-lg shadow-teal-600/20 transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-40 active:scale-95 border border-teal-400/30"
                 >
                   {isSubmittingAssignment ? (
                     <>جاري التكليف...</>
@@ -1128,18 +1129,16 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
 
       {/* Task Details & Brief Directives Modal */}
       {selectedTaskForDetails && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="glass-panel w-full max-w-2xl rounded-3xl p-6 border border-white/10 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
+          <div className="glass-panel w-full max-w-2xl rounded-3xl p-6 border border-slate-750 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto bg-slate-900/95">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3.5">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-teal-500/20 text-teal-400 border border-teal-500/30 flex items-center justify-center font-bold">
                   <FileText className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-white flex items-center gap-2">
-                    <span>{selectedTaskForDetails.stage.stage_name}</span>
-                  </h3>
+                  <h3 className="text-base font-black text-white">{selectedTaskForDetails.stage.stage_name}</h3>
                   <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
                     <Building2 className="w-3.5 h-3.5 text-indigo-400" />
                     <span className="text-white font-bold">{selectedTaskForDetails.client.company_name}</span>
@@ -1151,72 +1150,90 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
               <button
                 type="button"
                 onClick={() => setSelectedTaskForDetails(null)}
-                className="text-gray-400 hover:text-white font-bold p-1 rounded-lg hover:bg-white/10 cursor-pointer"
+                className="text-gray-400 hover:text-white font-bold p-1.5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            {/* Quick Status Bar */}
-            <div className="flex items-center justify-between gap-2 p-2.5 rounded-2xl bg-slate-950/70 border border-white/5 text-xs flex-wrap">
+            {/* Status & Assignment Meta Bar */}
+            <div className="flex items-center justify-between gap-2 p-3 rounded-2xl bg-slate-950/70 border border-slate-800/80 text-xs flex-wrap">
               <div className="flex items-center gap-2">
-                <span className="text-slate-400">حالة المهمة:</span>
+                <span className="text-slate-400 font-medium">الحالة:</span>
                 <StatusBadge status={selectedTaskForDetails.stage.status} size="sm" />
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-slate-400">الأولوية:</span>
+                <span className="text-slate-400 font-medium">الأولوية:</span>
                 <PriorityBadge priority={selectedTaskForDetails.client.priority} />
               </div>
               <div className="flex items-center gap-1.5 text-indigo-300 font-bold">
-                <span>المكلف: </span>
+                <span className="text-slate-400 font-medium">الموظف المكلف:</span>
                 {(() => {
                   const mem = members.find(m => m.id === selectedTaskForDetails.stage.assigned_member_id);
                   return mem ? (
-                    <span className="text-white">👤 {mem.name} ({mem.role})</span>
+                    <span className="text-white bg-slate-850 px-2.5 py-0.5 rounded-lg border border-slate-750">
+                      👤 {mem.name} ({mem.role})
+                    </span>
                   ) : (
-                    <span className="text-amber-400">⚠️ بانتظار تعيين موظف</span>
+                    <span className="text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/30">
+                      ⚠️ بانتظار تعيين موظف
+                    </span>
                   );
                 })()}
               </div>
             </div>
 
-            {/* SECTION 1: General Admin Request Details (Reference) */}
-            {selectedTaskForDetails.client.request_details && (
-              <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-1.5">
-                <span className="text-[11px] font-bold text-indigo-300 block flex items-center gap-1.5">
-                  <span>📋</span>
-                  <span>محتوى ومتطلبات الطلب من الإدارة (مرجع للاطلاع):</span>
-                </span>
-                <p className="text-xs text-slate-200 leading-relaxed whitespace-pre-wrap bg-slate-950/60 p-2.5 rounded-xl border border-slate-850">
-                  {selectedTaskForDetails.client.request_details}
-                </p>
-              </div>
-            )}
-
-            {/* SECTION 2: Head Directives (Editable) */}
-            <div className="p-4 rounded-2xl bg-teal-500/10 border border-teal-500/20 space-y-2.5">
+            {/* SECTION 1: Admin & Management Brief (Read-Only Reference) */}
+            <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-teal-300 flex items-center gap-1.5">
-                  <span>✍️</span>
-                  <span>توجيهات وتعليمات رئيس القسم للموظف (منفصلة):</span>
-                </label>
-                <span className="text-[10px] text-teal-400 bg-teal-500/15 px-2 py-0.5 rounded-md border border-teal-500/30 font-medium">
-                  تظهر للموظف كتعليمات خاصة من رئيس القسم
+                <span className="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
+                  <FileText className="w-4 h-4 text-indigo-400" />
+                  <span>توجيهات وملاحظات الإدارة على المهمة (مرجع للاطلاع):</span>
                 </span>
+                <span className="text-[10px] text-slate-400 bg-slate-850 px-2 py-0.5 rounded border border-slate-750">
+                  من الإدارة
+                </span>
+              </div>
+              <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800/90 text-xs text-slate-200 leading-relaxed whitespace-pre-wrap font-sans">
+                {selectedTaskForDetails.stage.description || selectedTaskForDetails.client.request_details || (
+                  <span className="text-slate-500 italic">لا توجد ملاحظات إضافية مسجلة من الإدارة على هذه المهمة.</span>
+                )}
+              </div>
+            </div>
+
+            {/* SECTION 2: Department Head Directives to Employee (Interactive & Clean) */}
+            <div className="p-4 rounded-2xl bg-teal-500/[0.04] border border-teal-500/25 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">✍️</span>
+                  <div>
+                    <label className="text-xs font-bold text-white block">
+                      توجيهات رئيس القسم للموظف:
+                    </label>
+                    <span className="text-[10px] text-slate-400 block mt-0.5">
+                      تظهر للموظف كتعليمات وتوجيهات خاصة من رئيس القسم لتنفيذ العمل
+                    </span>
+                  </div>
+                </div>
+                {selectedTaskForDetails.stage.head_instructions && (
+                  <span className="text-[10px] font-bold text-teal-300 bg-teal-500/15 px-2.5 py-0.5 rounded-full border border-teal-500/25">
+                    توجيهات مسجلة
+                  </span>
+                )}
               </div>
 
               <Textarea
-                rows={3}
+                rows={4}
                 value={editingTaskDesc}
                 onChange={(e) => setEditingTaskDesc(e.target.value)}
-                placeholder="اكتب هنا توجيهاتك الخاصة للموظف لتنفيذ هذه المهمة..."
-                className="w-full text-xs leading-relaxed bg-slate-950/90 border-slate-700"
+                placeholder="اكتب هنا توجيهاتك الفنية الخاصة للموظف لتنفيذ هذه المهمة بالشكل المطلوب..."
+                className="w-full text-xs leading-relaxed bg-slate-950/90 border-slate-700/80 focus:border-teal-400 rounded-xl"
               />
 
               <div className="flex items-center justify-between pt-1">
                 {saveDescSuccess ? (
-                  <span className="text-xs font-bold text-emerald-400 flex items-center gap-1 animate-fadeIn">
-                    <Check className="w-4 h-4" />
+                  <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5 animate-fadeIn">
+                    <Check className="w-4 h-4 text-emerald-400" />
                     <span>تم حفظ التوجيهات بنجاح!</span>
                   </span>
                 ) : (
@@ -1229,44 +1246,45 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                   type="button"
                   size="sm"
                   variant="primary"
-                  onClick={handleSaveTaskDescription}
+                  onClick={handleSaveHeadInstructions}
                   disabled={isSavingTaskDesc}
+                  className="bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shadow-md"
                 >
                   {isSavingTaskDesc ? 'جاري الحفظ...' : '💾 حفظ التوجيهات'}
                 </Button>
               </div>
             </div>
 
-            {/* SECTION 2: Basic Client & Store Info Grid */}
-            <div className="space-y-1.5">
+            {/* SECTION 3: Store & Client Data Grid */}
+            <div className="space-y-2">
               <span className="text-xs font-bold text-slate-300 block">بيانات المتجر والطلب:</span>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                <div className="bg-slate-950/60 p-2.5 rounded-xl border border-white/5">
+                <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
                   <span className="text-[10px] text-gray-400 block font-medium">اسم المتجر:</span>
                   <span className="text-xs font-bold text-white">{selectedTaskForDetails.client.company_name}</span>
                 </div>
-                <div className="bg-slate-950/60 p-2.5 rounded-xl border border-white/5">
+                <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
                   <span className="text-[10px] text-gray-400 block font-medium">اسم العميل المسؤول:</span>
                   <span className="text-xs font-bold text-slate-200">{selectedTaskForDetails.client.name}</span>
                 </div>
-                <div className="bg-slate-950/60 p-2.5 rounded-xl border border-white/5">
+                <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
                   <span className="text-[10px] text-gray-400 block font-medium">المنصة:</span>
                   <span className="text-xs font-bold text-indigo-300">{selectedTaskForDetails.client.platform || 'زد'}</span>
                 </div>
-                <div className="bg-slate-950/60 p-2.5 rounded-xl border border-white/5">
+                <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
                   <span className="text-[10px] text-gray-400 block font-medium">الباقة المختارة:</span>
                   <span className="text-xs font-bold text-amber-300">{selectedTaskForDetails.client.package_name || selectedTaskForDetails.client.service_type || 'باقة متكاملة'}</span>
                 </div>
-                <div className="bg-slate-950/60 p-2.5 rounded-xl border border-white/5">
+                <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
                   <span className="text-[10px] text-gray-400 block font-medium">إيميل الوكالة المخصص:</span>
                   <span className="text-xs font-bold text-indigo-300 font-mono select-all truncate block mt-0.5">{selectedTaskForDetails.client.agency_email || 'غير محدد'}</span>
                 </div>
-                <div className="bg-slate-950/60 p-2.5 rounded-xl border border-white/5">
+                <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
                   <span className="text-[10px] text-gray-400 block font-medium">رقم الهاتف:</span>
                   <span className="text-xs font-bold text-gray-300 font-mono block mt-0.5">{selectedTaskForDetails.client.phone || 'غير مسجل'}</span>
                 </div>
                 {selectedTaskForDetails.client.website_url && (
-                  <div className="bg-slate-950/60 p-2.5 rounded-xl border border-white/5 sm:col-span-3">
+                  <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 sm:col-span-3">
                     <span className="text-[10px] text-gray-400 block font-medium">رابط الموقع / المتجر:</span>
                     <a
                       href={selectedTaskForDetails.client.website_url.startsWith('http') ? selectedTaskForDetails.client.website_url : `https://${selectedTaskForDetails.client.website_url}`}
@@ -1282,7 +1300,7 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
             </div>
 
             {/* Action buttons */}
-            <div className="flex items-center justify-between pt-3 border-t border-white/10 text-xs">
+            <div className="flex items-center justify-between pt-3 border-t border-slate-800 text-xs">
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -1293,7 +1311,7 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                     setSelectedStageForAssignment({ client: cl, stage: st });
                     const defaultEmp = deptMembers.find(m => m.id !== currentMember.id);
                     setAssignmentSelectedMemberId(st.assigned_member_id || (defaultEmp ? defaultEmp.id : ''));
-                    setAssignmentInstructions(editingTaskDesc || st.description || cl.request_details || '');
+                    setAssignmentInstructions(editingTaskDesc || st.head_instructions || '');
                   }}
                   className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-md shadow-amber-500/20"
                 >
@@ -1325,3 +1343,4 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
     </div>
   );
 };
+

@@ -56,6 +56,7 @@ export interface TaskStage {
   assigned_by_id?: number | null;
   stage_name: string;
   description?: string | null;
+  head_instructions?: string | null;
   status: 'pending' | 'in_progress' | 'under_review' | 'revision_requested' | 'completed';
   completion_timestamp?: string | null;
   deliverable_note?: string | null;

@@ -170,7 +170,8 @@ class TaskStage(Base):
     department_id = Column(Integer, ForeignKey("departments.id"), nullable=False, index=True)
     assigned_member_id = Column(Integer, ForeignKey("team_members.id"), index=True)
     stage_name = Column(String, nullable=False)
-    description = Column(String, nullable=True)
+    description = Column(String, nullable=True)  # Admin/Intake general description & brief
+    head_instructions = Column(Text, nullable=True)  # Specific instructions written by Department Head for employee
     status = Column(String, default="pending", index=True)  # pending, in_progress, under_review, revision_requested, completed
     completion_timestamp = Column(DateTime, nullable=True)
     deliverable_note = Column(Text, nullable=True)

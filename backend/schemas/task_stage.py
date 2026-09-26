@@ -11,6 +11,7 @@ class TaskStageBase(BaseModel):
     assigned_member_id: Optional[int] = None
     stage_name: str = Field(..., min_length=1)
     description: Optional[str] = None
+    head_instructions: Optional[str] = None
     assigned_by_id: Optional[int] = None
 
 
@@ -19,6 +20,7 @@ class TaskStageCreate(BaseModel):
     assigned_member_id: Optional[int] = None
     stage_name: str = Field(..., min_length=1)
     description: Optional[str] = None
+    head_instructions: Optional[str] = None
     order_index: Optional[int] = None
     assigned_by_id: Optional[int] = None
 
@@ -28,6 +30,7 @@ class TaskStageUpdate(BaseModel):
     assigned_member_id: Optional[int] = None
     stage_name: Optional[str] = None
     description: Optional[str] = None
+    head_instructions: Optional[str] = None
     order_index: Optional[int] = None
     status: Optional[str] = None
     deliverable_note: Optional[str] = None
@@ -49,6 +52,7 @@ class TaskStageOut(TaskStageBase):
     reviewer_id: Optional[int] = None
     reviewed_at: Optional[datetime] = None
     assigned_by_id: Optional[int] = None
+    head_instructions: Optional[str] = None
     department: Optional[DepartmentOut] = None
     assigned_member: Optional[TeamMemberOut] = None
     reviewer: Optional[TeamMemberOut] = None

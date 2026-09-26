@@ -325,23 +325,33 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
                         <h4 className="text-xs sm:text-sm font-black text-white">{stage.stage_name}</h4>
                       </div>
 
-                      {/* Head Directives */}
-                      {stage.description && (
-                        <div className="p-2.5 rounded-xl bg-teal-500/10 border border-teal-500/20 text-xs">
-                          <span className="text-[10px] font-bold text-teal-300 flex items-center gap-1 mb-1">
-                            <span>✍️ توجيهات رئيس القسم:</span>
+                      {/* Head Directives (If Provided) */}
+                      {stage.head_instructions && (
+                        <div className="p-2.5 rounded-xl bg-teal-500/10 border border-teal-500/20 text-xs space-y-1">
+                          <span className="text-[10px] font-bold text-teal-300 flex items-center gap-1">
+                            <span>✍️ توجيهات وتعليمات رئيس القسم:</span>
                           </span>
-                          <p className="text-slate-200 leading-relaxed whitespace-pre-wrap">{stage.description}</p>
+                          <p className="text-slate-100 leading-relaxed whitespace-pre-wrap font-medium">{stage.head_instructions}</p>
                         </div>
                       )}
 
-                      {/* Admin Request Details (if no specific head description) */}
-                      {client.request_details && !stage.description && (
-                        <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs">
-                          <span className="text-[10px] font-bold text-indigo-300 flex items-center gap-1 mb-1">
+                      {/* Admin Management Brief */}
+                      {stage.description && (
+                        <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs space-y-1">
+                          <span className="text-[10px] font-bold text-indigo-300 flex items-center gap-1">
+                            <span>📋 توجيهات ومتطلبات الإدارة:</span>
+                          </span>
+                          <p className="text-slate-300 leading-relaxed whitespace-pre-wrap">{stage.description}</p>
+                        </div>
+                      )}
+
+                      {/* General Client Request Details (if no specific stage admin description) */}
+                      {!stage.description && client.request_details && (
+                        <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs space-y-1">
+                          <span className="text-[10px] font-bold text-indigo-300 flex items-center gap-1">
                             <span>📋 متطلبات الطلب من الإدارة:</span>
                           </span>
-                          <p className="text-slate-200 leading-relaxed whitespace-pre-wrap">{client.request_details}</p>
+                          <p className="text-slate-300 leading-relaxed whitespace-pre-wrap">{client.request_details}</p>
                         </div>
                       )}
                     </div>
@@ -605,20 +615,33 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
             </div>
 
             {/* SECTION 1: Head Directives (if provided) */}
-            {selectedTaskForDetails.stage.description && (
+            {selectedTaskForDetails.stage.head_instructions && (
               <div className="p-4 rounded-2xl bg-teal-500/10 border border-teal-500/20 space-y-2">
                 <span className="text-xs font-bold text-teal-300 block flex items-center gap-1.5">
                   <span>✍️</span>
                   <span>توجيهات وتعليمات رئيس القسم للمهمة:</span>
                 </span>
-                <div className="p-3 rounded-xl bg-slate-950/90 border border-slate-800 text-xs text-slate-200 leading-relaxed whitespace-pre-wrap">
+                <div className="p-3 rounded-xl bg-slate-950/90 border border-slate-800 text-xs text-slate-100 leading-relaxed whitespace-pre-wrap font-medium">
+                  {selectedTaskForDetails.stage.head_instructions}
+                </div>
+              </div>
+            )}
+
+            {/* SECTION 1.5: Admin Management Brief */}
+            {selectedTaskForDetails.stage.description && (
+              <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2">
+                <span className="text-xs font-bold text-indigo-300 block flex items-center gap-1.5">
+                  <FileText className="w-4 h-4 text-indigo-400" />
+                  <span>توجيهات ومتطلبات الإدارة على المهمة:</span>
+                </span>
+                <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800/80 text-xs text-slate-200 leading-relaxed whitespace-pre-wrap">
                   {selectedTaskForDetails.stage.description}
                 </div>
               </div>
             )}
 
-            {/* SECTION 1.5: Admin Request Details (Reference) */}
-            {selectedTaskForDetails.client.request_details && (
+            {/* SECTION 1.8: General Intake Details (Reference) */}
+            {selectedTaskForDetails.client.request_details && !selectedTaskForDetails.stage.description && (
               <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2">
                 <span className="text-xs font-bold text-indigo-300 block flex items-center gap-1.5">
                   <span>📋</span>

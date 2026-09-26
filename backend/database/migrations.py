@@ -12,6 +12,8 @@ def run_migrations():
             if existing_cols:
                 if "revision_notes" not in existing_cols:
                     conn.exec_driver_sql("ALTER TABLE task_stages ADD COLUMN revision_notes TEXT")
+                if "head_instructions" not in existing_cols:
+                    conn.exec_driver_sql("ALTER TABLE task_stages ADD COLUMN head_instructions TEXT")
                 if "reviewer_id" not in existing_cols:
                     conn.exec_driver_sql("ALTER TABLE task_stages ADD COLUMN reviewer_id INTEGER REFERENCES team_members(id)")
                 if "reviewed_at" not in existing_cols:

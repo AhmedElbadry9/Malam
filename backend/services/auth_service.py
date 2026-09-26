@@ -71,12 +71,14 @@ def change_user_password(db: Session, member_id: int, new_password: str):
 
 
 def toggle_user_active(db: Session, member_id: int):
-    member = db.get(models.TeamMember, member_id)
+    member = db.query(models.TeamMember).filter(models.TeamMember.id == member_id).first()
     if not member:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="المستخدم غير موجود")
 
-    member.is_active = not member.is_active
+    current_state = True if member.is_active is None else bool(member.is_active)
+    member.is_active = not current_state
     db.commit()
+    db.refresh(member)
     status_str = "تفعيل" if member.is_active else "تعطيل"
     return {
         "message": f"تم {status_str} حساب ({member.name}) بنجاح.",

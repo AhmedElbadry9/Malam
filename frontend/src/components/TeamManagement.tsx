@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   UserPlus, KeyRound, CheckCircle2, 
-  XCircle, Search, Mail, UserCheck, Save, Phone, Edit, Trash2, Check, Plus, Crown, Target, Briefcase, Award, Building2
+  XCircle, Search, Mail, UserCheck, Save, Phone, Edit, Trash2, Check, Plus, Crown, Target, Briefcase, Award, Building2, Loader2
 } from 'lucide-react';
 import type { Department, TeamMember } from '../types';
 
@@ -112,6 +112,20 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
   // Password Reset State
   const [newPassword, setNewPassword] = useState('');
   const [pwdLoading, setPwdLoading] = useState(false);
+  const [togglingMemberId, setTogglingMemberId] = useState<number | null>(null);
+
+  const handleToggleActiveStatus = async (e: React.MouseEvent, member: TeamMember) => {
+    e.stopPropagation();
+    try {
+      setTogglingMemberId(member.id);
+      await onToggleActive(member.id);
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || 'فشل تغيير حالة الحساب');
+    } finally {
+      setTogglingMemberId(null);
+    }
+  };
 
   // If the logged-in user is a Manager, hide Admins, Super Admins, and all Managers completely from the list
   const isManager = currentUserRole === 'manager';
@@ -500,21 +514,29 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
 
                       return (
                         <button
-                          disabled={isRestricted}
-                          onClick={(e) => { e.stopPropagation(); onToggleActive(member.id); }}
-                          className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold transition-all ${
-                            isRestricted ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
-                          } ${
-                            member.is_active !== false
-                              ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30'
-                              : 'bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 border border-rose-500/30'
+                          disabled={isRestricted || togglingMemberId === member.id}
+                          onClick={(e) => handleToggleActiveStatus(e, member)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all select-none shadow-sm ${
+                            isRestricted 
+                              ? 'opacity-40 cursor-not-allowed bg-slate-800 text-gray-400' 
+                              : togglingMemberId === member.id
+                                ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 cursor-wait'
+                                : member.is_active !== false
+                                  ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 hover:shadow-emerald-500/10 cursor-pointer active:scale-95'
+                                  : 'bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 border border-rose-500/30 hover:shadow-rose-500/10 cursor-pointer active:scale-95'
                           }`}
-                          title={isRestricted ? 'لا يملك مدير المشاريع صلاحية تعديل حالة المدراء' : (member.is_active !== false ? 'تعطيل الحساب' : 'تفعيل الحساب')}
+                          title={
+                            isRestricted 
+                              ? 'لا يملك مدير المشاريع صلاحية تعديل حالة المدراء' 
+                              : (member.is_active !== false ? 'اضغط لتعطيل الحساب' : 'اضغط لتفعيل الحساب')
+                          }
                         >
-                          {member.is_active !== false ? (
-                            <><CheckCircle2 className="w-3.5 h-3.5" /> نشط</>
+                          {togglingMemberId === member.id ? (
+                            <><Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-400" /> جاري التحديث...</>
+                          ) : member.is_active !== false ? (
+                            <><CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> نشط</>
                           ) : (
-                            <><XCircle className="w-3.5 h-3.5" /> معطل</>
+                            <><XCircle className="w-3.5 h-3.5 text-rose-400" /> معطل</>
                           )}
                         </button>
                       );

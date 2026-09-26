@@ -1070,7 +1070,7 @@ export const DepartmentManagement: React.FC<DepartmentManagementProps> = ({
             <span>إدارة وتخصيص الأقسام (Department Management)</span>
           </h2>
           <p className="text-xs text-gray-400 mt-1">
-            إدارة الأدوار الوظيفية (تسمع بتعيين الموظفين) والمهام والخدمات (تسمع بمشاريع العملاء) لكل قسم
+            إدارة الأدوار الوظيفية والمهام والخدمات لكل قسم
           </p>
         </div>
 

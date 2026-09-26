@@ -1589,12 +1589,12 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
               </div>
             )}
 
-            <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-slate-200 space-y-2">
+            <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-slate-200 space-y-2.5">
               <h3 className="font-black text-sm text-indigo-300 flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                 <span>ملخص بيانات العميل قبل الحفظ والتجهيز:</span>
               </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1 text-slate-300">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1 text-slate-300">
                 <div>
                   <span className="text-slate-400 block text-[11px]">اسم المتجر:</span>
                   <strong className="text-white">{companyName}</strong>
@@ -1612,8 +1612,20 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
                   <strong className="text-indigo-300 font-mono text-[11px] truncate block">{agencyEmail || 'غير محدد'}</strong>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[11px]">معرّف المتجر:</span>
-                  <strong className="text-slate-300 font-mono">{storeId || 'غير محدد'}</strong>
+                  <span className="text-slate-400 block text-[11px]">رابط الموقع:</span>
+                  {websiteUrl ? (
+                    <a
+                      href={websiteUrl.startsWith('http://') || websiteUrl.startsWith('https://') ? websiteUrl : `https://${websiteUrl}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-cyan-400 hover:text-cyan-300 underline font-mono text-[11px] truncate block"
+                      dir="ltr"
+                    >
+                      {websiteUrl}
+                    </a>
+                  ) : (
+                    <strong className="text-slate-500">غير محدد</strong>
+                  )}
                 </div>
                 <div>
                   <span className="text-slate-400 block text-[11px]">اسم الباقة:</span>
@@ -1625,13 +1637,22 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
                 </div>
                 <div>
                   <span className="text-slate-400 block text-[11px]">المرحلة:</span>
-                  <strong className="text-emerald-400">{status}</strong>
+                  <strong className="text-emerald-400">{status || 'غير محدد'}</strong>
                 </div>
                 <div>
                   <span className="text-slate-400 block text-[11px]">الأولوية:</span>
                   <PriorityBadge priority={priority} />
                 </div>
               </div>
+
+              {requestDetails && requestDetails.trim() && (
+                <div className="pt-2 border-t border-indigo-500/20 mt-1">
+                  <span className="text-slate-400 block text-[11px] font-bold mb-1">المحتوى إن وجد:</span>
+                  <p className="text-slate-200 text-[11px] bg-slate-950/70 p-2.5 rounded-xl border border-slate-800/80 whitespace-pre-wrap leading-relaxed max-h-24 overflow-y-auto">
+                    {requestDetails}
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-2 text-xs">

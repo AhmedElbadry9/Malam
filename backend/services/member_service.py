@@ -56,7 +56,7 @@ def create_member(db: Session, member_in: schemas.TeamMemberCreate, current_user
         role=member_in.role.strip(),
         email=uemail,
         phone=member_in.phone.strip() if member_in.phone else None,
-        avatar=member_in.avatar or "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
+        avatar=member_in.avatar if member_in.avatar else None,
         department_id=primary_dept,
         role_type=member_in.role_type,
         is_active=member_in.is_active

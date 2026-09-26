@@ -191,16 +191,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             </div>
             
-            <div className="w-9 h-9 rounded-xl bg-slate-800/90 border border-slate-700 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
-              {currentUser.member?.avatar ? (
-                <img
-                  src={currentUser.member.avatar}
-                  alt={currentUser.member.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <RoleIcon className={`w-4 h-4 ${roleInfo.iconColor}`} />
-              )}
+            <div className="w-9 h-9 rounded-xl bg-slate-800/90 border border-slate-700/80 flex items-center justify-center shrink-0 shadow-inner">
+              <RoleIcon className={`w-4.5 h-4.5 ${roleInfo.iconColor}`} />
             </div>
           </div>
 

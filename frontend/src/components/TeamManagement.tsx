@@ -587,90 +587,118 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
 
       {/* Add / Edit Member Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="glass-panel w-full max-w-lg rounded-3xl p-6 border border-white/10 space-y-5 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fadeIn overflow-y-auto">
+          <div className="glass-panel w-full max-w-2xl sm:max-w-3xl rounded-3xl border border-white/10 shadow-2xl bg-slate-900/95 flex flex-col max-h-[90vh] my-auto overflow-hidden">
             
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                {editingMember ? <Edit className="w-5 h-5 text-indigo-400" /> : <UserPlus className="w-5 h-5 text-indigo-400" />}
-                <span>{editingMember ? 'تعديل بيانات الموظف' : 'إضافة موظف / مدير جديد'}</span>
-              </h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-white font-bold p-1 rounded-lg hover:bg-white/10">✕</button>
+            {/* Modal Sticky Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-slate-950/60 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-400">
+                  {editingMember ? <Edit className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white">
+                    {editingMember ? `تعديل بيانات: ${editingMember.name}` : 'إضافة موظف / كادر جديد للوكالة'}
+                  </h3>
+                  <p className="text-[11px] text-gray-400 mt-0.5">
+                    {editingMember ? 'تحديث الصلاحيات، الأقسام المسندة، والمسمى الوظيفي' : 'إنشاء حساب جديد وتعيين الصلاحيات والأقسام المناسبة'}
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsModalOpen(false)} 
+                className="text-gray-400 hover:text-white font-bold p-2 rounded-xl hover:bg-white/10 transition-colors cursor-pointer"
+                title="إغلاق"
+              >
+                ✕
+              </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+            {/* Modal Scrollable Form Body */}
+            <form id="member-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-5 text-xs">
               
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-gray-300 mb-1">الاسم الكامل:</label>
-                  <input
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="مثال: أحمد عبد الله"
-                    className="w-full p-2.5 rounded-xl bg-slate-950 border border-white/10 text-white focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
+              {/* Section 1: Basic Information */}
+              <div className="space-y-3">
+                <h4 className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <span>1. البيانات الأساسية للحساب</span>
+                </h4>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block font-bold text-gray-300 mb-1.5">الاسم الكامل <span className="text-rose-400">*</span></label>
+                    <input
+                      type="text"
+                      required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="مثال: أحمد عبد الله"
+                      className="w-full p-2.5 rounded-xl bg-slate-950 border border-white/10 text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block font-bold text-gray-300 mb-1">اسم المستخدم (Username):</label>
-                  <input
-                    type="text"
-                    required
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="مثال: ahmed_dev"
-                    className="w-full p-2.5 rounded-xl bg-slate-950 border border-white/10 text-white font-mono focus:outline-none focus:border-indigo-500"
-                  />
+                  <div>
+                    <label className="block font-bold text-gray-300 mb-1.5">اسم المستخدم (Username) <span className="text-rose-400">*</span></label>
+                    <input
+                      type="text"
+                      required
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      placeholder="مثال: ahmed_dev"
+                      className="w-full p-2.5 rounded-xl bg-slate-950 border border-white/10 text-white font-mono focus:outline-none focus:border-indigo-500 transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-gray-300 mb-1.5">البريد الإلكتروني <span className="text-rose-400">*</span></label>
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="email@agency.com"
+                      className="w-full p-2.5 rounded-xl bg-slate-950 border border-white/10 text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block font-bold text-gray-300 mb-1.5">رقم الهاتف (اختياري)</label>
+                    <input
+                      type="text"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="01xxxxxxxxx"
+                      className="w-full p-2.5 rounded-xl bg-slate-950 border border-white/10 text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                    />
+                  </div>
+
+                  {!editingMember && (
+                    <div className="sm:col-span-2">
+                      <label className="block font-bold text-gray-300 mb-1.5">كلمة المرور الافتراضية <span className="text-rose-400">*</span></label>
+                      <input
+                        type="password"
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="كلمة السر للدخول..."
+                        className="w-full p-2.5 rounded-xl bg-slate-950 border border-white/10 text-white font-mono focus:outline-none focus:border-indigo-500 transition-colors"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-gray-300 mb-1">البريد الإلكتروني:</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="email@agency.com"
-                    className="w-full p-2.5 rounded-xl bg-slate-950 border border-white/10 text-white focus:outline-none focus:border-indigo-500"
-                  />
+              {/* Section 2: Department Assignment */}
+              <div className="space-y-2.5 pt-2 border-t border-white/10">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>2. الأقسام التابع لها الموظف</span>
+                  </h4>
+                  <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 font-bold border border-indigo-500/30">
+                    تم تحديد {departmentIds.length} أقسام
+                  </span>
                 </div>
                 
-                <div>
-                  <label className="block font-bold text-gray-300 mb-1">رقم الهاتف (اختياري):</label>
-                  <input
-                    type="text"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="01xxxxxxxxx"
-                    className="w-full p-2.5 rounded-xl bg-slate-950 border border-white/10 text-white focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-              </div>
-
-              {!editingMember && (
-                <div>
-                  <label className="block font-bold text-gray-300 mb-1">كلمة المرور (Password):</label>
-                  <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="كلمة السر..."
-                    className="w-full p-2.5 rounded-xl bg-slate-950 border border-white/10 text-white font-mono focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-              )}
-
-              {/* 1. Select Departments FIRST */}
-              <div>
-                <label className="block font-bold text-gray-300 mb-1.5 flex items-center justify-between">
-                  <span>1. اختر الأقسام التابع لها الموظف:</span>
-                  <span className="text-[10px] text-indigo-400 font-bold">تم اختيار {departmentIds.length} أقسام</span>
-                </label>
-                <div className="flex flex-wrap gap-1.5 p-2.5 rounded-xl bg-slate-950 border border-white/10">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-3 rounded-2xl bg-slate-950/70 border border-white/10">
                   {departments.map(d => {
                     const isSelected = departmentIds.includes(d.id);
                     return (
@@ -686,30 +714,32 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
                             setDepartmentIds([...departmentIds, d.id]);
                           }
                         }}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border flex items-center gap-1.5 ${
+                        className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border flex items-center justify-between gap-1.5 ${
                           isSelected
-                            ? 'bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-600/20'
+                            ? 'bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-600/30'
                             : 'bg-slate-900 border-white/5 text-gray-400 hover:text-white hover:border-white/20'
                         }`}
                       >
-                        {isSelected ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <Plus className="w-3.5 h-3.5" />}
-                        <span>{d.name_ar}</span>
+                        <span className="truncate">{d.name_ar}</span>
+                        {isSelected ? <Check className="w-3.5 h-3.5 stroke-[3] shrink-0" /> : <Plus className="w-3.5 h-3.5 shrink-0 opacity-50" />}
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              {/* 2. Select / Type Role Title SECOND (Filtered dynamically by chosen department) */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block font-bold text-gray-300">2. المسمى الوظيفي (Role Title):</label>
+              {/* Section 3: Role Title & Suggestions */}
+              <div className="space-y-2.5 pt-2 border-t border-white/10">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>3. المسمى الوظيفي والدور التخصصي</span>
+                  </h4>
                   <button
                     type="button"
                     onClick={() => setShowAllRoles(!showAllRoles)}
-                    className="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold underline cursor-pointer"
+                    className="text-[11px] text-indigo-400 hover:text-indigo-300 font-bold underline cursor-pointer"
                   >
-                    {showAllRoles ? '✨ إظهار وظائف القسم المختار فقط' : '🌐 عرض كل وظائف الوكالة (24)'}
+                    {showAllRoles ? '✨ إظهار وظائف الأقسام المختارة فقط' : '🌐 عرض كل وظائف الوكالة'}
                   </button>
                 </div>
 
@@ -718,18 +748,15 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
                   required
                   value={roleTitle}
                   onChange={(e) => setRoleTitle(e.target.value)}
-                  placeholder="اكتب المسمى الوظيفي أو اضغط على أي مسمى مقترح بالأسفل..."
-                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-white/10 text-white focus:outline-none focus:border-indigo-500"
+                  placeholder="اكتب المسمى الوظيفي أو اختر من المسميات المقترحة بالأسفل..."
+                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-white/10 text-white focus:outline-none focus:border-indigo-500 transition-colors font-medium"
                 />
 
-                {/* Dynamic Role Suggestions based on chosen department(s) */}
-                <div className="mt-2 p-3 rounded-xl bg-slate-950/80 border border-white/10 space-y-2.5">
-                  <div className="flex items-center justify-between border-b border-white/5 pb-1.5">
-                    <span className="text-[11px] text-indigo-300 font-bold flex items-center gap-1.5">
-                      <span>{showAllRoles ? 'كل مسميات ووظائف الوكالة:' : 'الوظائف المتاحة للأقسام المختارة (اضغط للاختيار):'}</span>
-                    </span>
-                    <span className="text-[10px] text-gray-400">يمكنك أيضاً كتابة مسمى مخصص بالخانة</span>
-                  </div>
+                {/* Role Suggestions Box */}
+                <div className="p-3.5 rounded-2xl bg-slate-950/70 border border-white/10 space-y-2.5">
+                  <span className="text-[10px] text-gray-400 block font-medium">
+                    {showAllRoles ? 'جميع المسميات الوظيفية المعتمدة بالوكالة (اضغط للتعيين المباشر):' : 'المسميات المتاحة للأقسام التي اخترتها:'}
+                  </span>
 
                   {(() => {
                     const activeDepts = showAllRoles
@@ -739,23 +766,23 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
                     if (activeDepts.length === 0) {
                       return (
                         <p className="text-[11px] text-gray-400 py-1">
-                          اختر قسماً من القائمة بالأعلى لتظهر وظائفه هنا، أو اكتب المسمى يدوياً.
+                          اختر قسماً من القائمة أعلاه لتظهر الوظائف المتاحة له هنا.
                         </p>
                       );
                     }
 
                     return (
-                      <div className="space-y-2.5 max-h-48 overflow-y-auto custom-scrollbar pr-1">
+                      <div className="space-y-2 max-h-36 overflow-y-auto custom-scrollbar pr-1">
                         {activeDepts.map(d => {
                           const roles = getRolesForDepartment(d);
                           if (roles.length === 0) return null;
                           return (
                             <div key={d.id} className="space-y-1">
-                              <div className="flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: d.color || '#6366f1' }} />
-                                <span className="text-[10px] text-gray-300 font-bold">{d.name_ar}:</span>
+                              <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-300">
+                                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: d.color || '#6366f1' }} />
+                                <span>{d.name_ar}</span>
                               </div>
-                              <div className="flex flex-wrap gap-1 pr-3">
+                              <div className="flex flex-wrap gap-1 pr-2">
                                 {roles.map(preset => {
                                   const isCurrent = roleTitle === preset;
                                   return (
@@ -765,7 +792,7 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
                                       onClick={() => setRoleTitle(preset)}
                                       className={`text-[10px] px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer border ${
                                         isCurrent
-                                          ? 'bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-600/20'
+                                          ? 'bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-600/30'
                                           : 'bg-white/5 border-white/5 text-gray-300 hover:text-white hover:bg-white/10'
                                       }`}
                                     >
@@ -783,57 +810,67 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
                 </div>
               </div>
 
-              <div>
-                <label className="block font-bold text-gray-300 mb-1">مستوى الصلاحية والرتبة:</label>
-                <select
-                  value={roleType}
-                  onChange={(e) => setRoleType(e.target.value as any)}
-                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-white/10 text-white focus:outline-none focus:border-indigo-500 font-medium cursor-pointer"
-                >
-                  <option value="employee">💼 موظف تنفيذي (تنفيذ المهام المسندة له ورفع المخرجات)</option>
-                  <option value="head">⭐ رئيس قسم (Head - توزيع مهام القسم ومراجعة واعتماد المخرجات)</option>
-                  {currentUserRole !== 'manager' && (
-                    <>
-                      <option value="manager">🎯 مدير مشاريع (Manager - متابعة العمليات وإدارة المشاريع)</option>
-                      <option value="admin">👑 مدير النظام (Admin - صلاحيات كاملة: أقسام، كوادر، عملاء، تشغيل)</option>
-                    </>
-                  )}
-                </select>
+              {/* Section 4: Role Level & Account Status */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2 border-t border-white/10">
+                <div>
+                  <label className="block font-bold text-gray-300 mb-1.5">مستوى الصلاحية والرتبة الإدارية:</label>
+                  <select
+                    value={roleType}
+                    onChange={(e) => setRoleType(e.target.value as any)}
+                    className="w-full p-2.5 rounded-xl bg-slate-950 border border-white/10 text-white focus:outline-none focus:border-indigo-500 font-medium cursor-pointer"
+                  >
+                    <option value="employee">💼 موظف تنفيذي (تنفيذ المهام المسندة له ورفع المخرجات)</option>
+                    <option value="head">⭐ رئيس قسم (Head - توزيع ومراجعة واعتماد المهام)</option>
+                    {currentUserRole !== 'manager' && (
+                      <>
+                        <option value="manager">🎯 مدير مشاريع (Manager - متابعة العمليات والمشاريع)</option>
+                        <option value="admin">👑 مدير النظام (Admin - صلاحيات إدارة كاملة)</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+
+                {editingMember && (
+                  <div className="flex flex-col justify-end">
+                    <label className="flex items-center gap-2.5 cursor-pointer p-2.5 rounded-xl bg-slate-950 border border-white/10 hover:border-white/20 transition-colors">
+                      <input 
+                        type="checkbox" 
+                        checked={isActive}
+                        onChange={(e) => setIsActive(e.target.checked)}
+                        className="accent-indigo-500 w-4 h-4 cursor-pointer"
+                      />
+                      <span className="font-bold text-gray-200 text-xs">الحساب نشط (يمكنه الدخول للنظام)</span>
+                    </label>
+                  </div>
+                )}
               </div>
 
-              {editingMember && (
-                <div>
-                  <label className="flex items-center gap-2 cursor-pointer mt-2 p-2.5 rounded-xl bg-slate-900 border border-white/10">
-                    <input 
-                      type="checkbox" 
-                      checked={isActive}
-                      onChange={(e) => setIsActive(e.target.checked)}
-                      className="accent-indigo-500 w-4 h-4 cursor-pointer"
-                    />
-                    <span className="font-bold text-gray-200">الحساب نشط (يمكنه تسجيل الدخول للنظام)</span>
-                  </label>
-                </div>
-              )}
+            </form>
 
-              <div className="pt-3 flex justify-end gap-2 border-t border-white/10 mt-2">
+            {/* Modal Sticky Footer with Action Buttons */}
+            <div className="px-6 py-4 border-t border-white/10 bg-slate-950/80 flex items-center justify-between gap-3 shrink-0">
+              <span className="text-[11px] text-gray-400 hidden sm:inline">
+                {editingMember ? 'سيتم حفظ وتحديث بيانات الموظف فوراً' : 'سيتم إضافة الحساب إلى فريق العمل'}
+              </span>
+              <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 font-bold text-gray-300 cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 font-bold text-gray-300 transition-colors cursor-pointer text-xs"
                 >
                   إلغاء
                 </button>
                 <button
                   type="submit"
+                  form="member-form"
                   disabled={loading}
-                  className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-md cursor-pointer"
+                  className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-lg shadow-indigo-600/30 transition-all cursor-pointer text-xs active:scale-95 disabled:opacity-50"
                 >
                   <Save className="w-4 h-4" />
                   <span>{loading ? 'جاري الحفظ...' : 'حفظ بيانات الموظف'}</span>
                 </button>
               </div>
-
-            </form>
+            </div>
 
           </div>
         </div>

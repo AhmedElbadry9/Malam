@@ -587,11 +587,11 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
 
       {/* Add / Edit Member Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fadeIn overflow-y-auto">
-          <div className="glass-panel w-full max-w-2xl sm:max-w-3xl rounded-3xl border border-white/10 shadow-2xl bg-slate-900/95 flex flex-col max-h-[90vh] my-auto overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md animate-fadeIn overflow-y-auto">
+          <div className="relative w-full max-w-2xl sm:max-w-3xl rounded-3xl border border-slate-700/80 shadow-2xl bg-slate-900 flex flex-col max-h-[82vh] overflow-hidden my-auto">
             
             {/* Modal Sticky Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-slate-950/60 shrink-0">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-slate-950/80 shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-400">
                   {editingMember ? <Edit className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
@@ -615,7 +615,7 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
             </div>
 
             {/* Modal Scrollable Form Body */}
-            <form id="member-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-5 text-xs">
+            <form id="member-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto custom-scrollbar p-5 sm:p-6 space-y-4 text-xs">
               
               {/* Section 1: Basic Information */}
               <div className="space-y-3">
@@ -623,33 +623,33 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
                   <span>1. البيانات الأساسية للحساب</span>
                 </h4>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block font-bold text-gray-300 mb-1.5">الاسم الكامل <span className="text-rose-400">*</span></label>
+                    <label className="block font-bold text-gray-300 mb-1">الاسم الكامل <span className="text-rose-400">*</span></label>
                     <input
                       type="text"
                       required
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="مثال: أحمد عبد الله"
+                      placeholder="مثال: طارق مصطفى"
                       className="w-full p-2.5 rounded-xl bg-slate-950 border border-white/10 text-white focus:outline-none focus:border-indigo-500 transition-colors"
                     />
                   </div>
 
                   <div>
-                    <label className="block font-bold text-gray-300 mb-1.5">اسم المستخدم (Username) <span className="text-rose-400">*</span></label>
+                    <label className="block font-bold text-gray-300 mb-1">اسم المستخدم (Username) <span className="text-rose-400">*</span></label>
                     <input
                       type="text"
                       required
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      placeholder="مثال: ahmed_dev"
+                      placeholder="مثال: tarek_dev"
                       className="w-full p-2.5 rounded-xl bg-slate-950 border border-white/10 text-white font-mono focus:outline-none focus:border-indigo-500 transition-colors"
                     />
                   </div>
 
                   <div>
-                    <label className="block font-bold text-gray-300 mb-1.5">البريد الإلكتروني <span className="text-rose-400">*</span></label>
+                    <label className="block font-bold text-gray-300 mb-1">البريد الإلكتروني <span className="text-rose-400">*</span></label>
                     <input
                       type="email"
                       required
@@ -661,7 +661,7 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
                   </div>
                   
                   <div>
-                    <label className="block font-bold text-gray-300 mb-1.5">رقم الهاتف (اختياري)</label>
+                    <label className="block font-bold text-gray-300 mb-1">رقم الهاتف (اختياري)</label>
                     <input
                       type="text"
                       value={phone}
@@ -673,7 +673,7 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
 
                   {!editingMember && (
                     <div className="sm:col-span-2">
-                      <label className="block font-bold text-gray-300 mb-1.5">كلمة المرور الافتراضية <span className="text-rose-400">*</span></label>
+                      <label className="block font-bold text-gray-300 mb-1">كلمة المرور الافتراضية <span className="text-rose-400">*</span></label>
                       <input
                         type="password"
                         required
@@ -688,7 +688,7 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
               </div>
 
               {/* Section 2: Department Assignment */}
-              <div className="space-y-2.5 pt-2 border-t border-white/10">
+              <div className="space-y-2 pt-2 border-t border-white/10">
                 <div className="flex items-center justify-between">
                   <h4 className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
                     <span>2. الأقسام التابع لها الموظف</span>
@@ -698,7 +698,7 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
                   </span>
                 </div>
                 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-3 rounded-2xl bg-slate-950/70 border border-white/10">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-2.5 rounded-2xl bg-slate-950/70 border border-white/10">
                   {departments.map(d => {
                     const isSelected = departmentIds.includes(d.id);
                     return (
@@ -729,7 +729,7 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
               </div>
 
               {/* Section 3: Role Title & Suggestions */}
-              <div className="space-y-2.5 pt-2 border-t border-white/10">
+              <div className="space-y-2 pt-2 border-t border-white/10">
                 <div className="flex items-center justify-between">
                   <h4 className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
                     <span>3. المسمى الوظيفي والدور التخصصي</span>
@@ -753,7 +753,7 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
                 />
 
                 {/* Role Suggestions Box */}
-                <div className="p-3.5 rounded-2xl bg-slate-950/70 border border-white/10 space-y-2.5">
+                <div className="p-3 rounded-2xl bg-slate-950/70 border border-white/10 space-y-2">
                   <span className="text-[10px] text-gray-400 block font-medium">
                     {showAllRoles ? 'جميع المسميات الوظيفية المعتمدة بالوكالة (اضغط للتعيين المباشر):' : 'المسميات المتاحة للأقسام التي اخترتها:'}
                   </span>
@@ -772,7 +772,7 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
                     }
 
                     return (
-                      <div className="space-y-2 max-h-36 overflow-y-auto custom-scrollbar pr-1">
+                      <div className="space-y-2 max-h-32 overflow-y-auto custom-scrollbar pr-1">
                         {activeDepts.map(d => {
                           const roles = getRolesForDepartment(d);
                           if (roles.length === 0) return null;
@@ -810,45 +810,29 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
                 </div>
               </div>
 
-              {/* Section 4: Role Level & Account Status */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2 border-t border-white/10">
-                <div>
-                  <label className="block font-bold text-gray-300 mb-1.5">مستوى الصلاحية والرتبة الإدارية:</label>
-                  <select
-                    value={roleType}
-                    onChange={(e) => setRoleType(e.target.value as any)}
-                    className="w-full p-2.5 rounded-xl bg-slate-950 border border-white/10 text-white focus:outline-none focus:border-indigo-500 font-medium cursor-pointer"
-                  >
-                    <option value="employee">💼 موظف تنفيذي (تنفيذ المهام المسندة له ورفع المخرجات)</option>
-                    <option value="head">⭐ رئيس قسم (Head - توزيع ومراجعة واعتماد المهام)</option>
-                    {currentUserRole !== 'manager' && (
-                      <>
-                        <option value="manager">🎯 مدير مشاريع (Manager - متابعة العمليات والمشاريع)</option>
-                        <option value="admin">👑 مدير النظام (Admin - صلاحيات إدارة كاملة)</option>
-                      </>
-                    )}
-                  </select>
-                </div>
-
-                {editingMember && (
-                  <div className="flex flex-col justify-end">
-                    <label className="flex items-center gap-2.5 cursor-pointer p-2.5 rounded-xl bg-slate-950 border border-white/10 hover:border-white/20 transition-colors">
-                      <input 
-                        type="checkbox" 
-                        checked={isActive}
-                        onChange={(e) => setIsActive(e.target.checked)}
-                        className="accent-indigo-500 w-4 h-4 cursor-pointer"
-                      />
-                      <span className="font-bold text-gray-200 text-xs">الحساب نشط (يمكنه الدخول للنظام)</span>
-                    </label>
-                  </div>
-                )}
+              {/* Section 4: Role Level */}
+              <div className="pt-2 border-t border-white/10">
+                <label className="block font-bold text-gray-300 mb-1.5">مستوى الصلاحية والرتبة الإدارية:</label>
+                <select
+                  value={roleType}
+                  onChange={(e) => setRoleType(e.target.value as any)}
+                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-white/10 text-white focus:outline-none focus:border-indigo-500 font-medium cursor-pointer"
+                >
+                  <option value="employee">💼 موظف تنفيذي (تنفيذ المهام المسندة له ورفع المخرجات)</option>
+                  <option value="head">⭐ رئيس قسم (Head - توزيع ومراجعة واعتماد المهام)</option>
+                  {currentUserRole !== 'manager' && (
+                    <>
+                      <option value="manager">🎯 مدير مشاريع (Manager - متابعة العمليات والمشاريع)</option>
+                      <option value="admin">👑 مدير النظام (Admin - صلاحيات إدارة كاملة)</option>
+                    </>
+                  )}
+                </select>
               </div>
 
             </form>
 
             {/* Modal Sticky Footer with Action Buttons */}
-            <div className="px-6 py-4 border-t border-white/10 bg-slate-950/80 flex items-center justify-between gap-3 shrink-0">
+            <div className="px-6 py-3.5 border-t border-white/10 bg-slate-950/80 flex items-center justify-between gap-3 shrink-0">
               <span className="text-[11px] text-gray-400 hidden sm:inline">
                 {editingMember ? 'سيتم حفظ وتحديث بيانات الموظف فوراً' : 'سيتم إضافة الحساب إلى فريق العمل'}
               </span>
@@ -856,7 +840,7 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 font-bold text-gray-300 transition-colors cursor-pointer text-xs"
+                  className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 font-bold text-gray-300 transition-colors cursor-pointer text-xs"
                 >
                   إلغاء
                 </button>
@@ -864,7 +848,7 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
                   type="submit"
                   form="member-form"
                   disabled={loading}
-                  className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-lg shadow-indigo-600/30 transition-all cursor-pointer text-xs active:scale-95 disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 px-6 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-lg shadow-indigo-600/30 transition-all cursor-pointer text-xs active:scale-95 disabled:opacity-50"
                 >
                   <Save className="w-4 h-4" />
                   <span>{loading ? 'جاري الحفظ...' : 'حفظ بيانات الموظف'}</span>

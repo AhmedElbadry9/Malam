@@ -19,6 +19,448 @@ def sync_member_departments(target_session=None):
         if should_close:
             db.close()
 
+CLEAN_TEAM_DATA = [
+    # 1. الإدارة العامة والتشغيل (Management & Operations)
+    {
+        "name": "أحمد المنشاوي",
+        "username": "admin",
+        "password": "123",
+        "email": "admin@agency.com",
+        "phone": "01000000001",
+        "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+        "role": "المدير التنفيذي والعام (CEO)",
+        "role_type": "admin",
+        "dept_code": "OPERATIONS",
+        "is_active": True,
+        "dept_codes_list": ["SOCIAL_CONTENT", "PRODUCTION", "BRANDING", "DEV_ECOMMERCE", "PERFORMANCE_ADS", "STRATEGY", "OPERATIONS"]
+    },
+    {
+        "name": "كريم الشناوي",
+        "username": "manager",
+        "password": "123",
+        "email": "manager@agency.com",
+        "phone": "01000000002",
+        "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150",
+        "role": "مدير العمليات والمشاريع (Project & Operations Manager)",
+        "role_type": "manager",
+        "dept_code": "OPERATIONS",
+        "is_active": True,
+        "dept_codes_list": ["SOCIAL_CONTENT", "PRODUCTION", "BRANDING", "DEV_ECOMMERCE", "PERFORMANCE_ADS", "STRATEGY", "OPERATIONS"]
+    },
+
+    # 2. قسم المحتوى والسوشيال ميديا (Social Media & Content)
+    {
+        "name": "مريم الشريف",
+        "username": "head_social",
+        "password": "123",
+        "email": "maryam@agency.com",
+        "phone": "01000000003",
+        "avatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150",
+        "role": "رئيس قسم السوشيال ميديا والمحتوى",
+        "role_type": "head",
+        "dept_code": "SOCIAL_CONTENT",
+        "is_active": True,
+        "dept_codes_list": ["SOCIAL_CONTENT"]
+    },
+    {
+        "name": "زياد طارق",
+        "username": "zeyad",
+        "password": "123",
+        "email": "zeyad@agency.com",
+        "phone": "01000000004",
+        "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150",
+        "role": "كاتب محتوى إعلاني وتسويقي (Copywriter)",
+        "role_type": "employee",
+        "dept_code": "SOCIAL_CONTENT",
+        "is_active": True,
+        "dept_codes_list": ["SOCIAL_CONTENT"]
+    },
+    {
+        "name": "دينا إبراهيم",
+        "username": "dina",
+        "password": "123",
+        "email": "dina@agency.com",
+        "phone": "01000000005",
+        "avatar": "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150",
+        "role": "أخصائي إدارة منصات ونشر (Community Manager)",
+        "role_type": "employee",
+        "dept_code": "SOCIAL_CONTENT",
+        "is_active": True,
+        "dept_codes_list": ["SOCIAL_CONTENT"]
+    },
+    {
+        "name": "أحمد سامح",
+        "username": "sameh",
+        "password": "123",
+        "email": "sameh@agency.com",
+        "phone": "01000000006",
+        "avatar": "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150",
+        "role": "صانع محتوى إبداعي وسيناريو (Scriptwriter)",
+        "role_type": "employee",
+        "dept_code": "SOCIAL_CONTENT",
+        "is_active": True,
+        "dept_codes_list": ["SOCIAL_CONTENT"]
+    },
+
+    # 3. قسم الإنتاج المرئي والمسموع (Video Production & Audio)
+    {
+        "name": "كريم صادق",
+        "username": "head_production",
+        "password": "123",
+        "email": "kareem@agency.com",
+        "phone": "01000000007",
+        "avatar": "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150",
+        "role": "رئيس قسم الإنتاج والمخرج الفني",
+        "role_type": "head",
+        "dept_code": "PRODUCTION",
+        "is_active": True,
+        "dept_codes_list": ["PRODUCTION"]
+    },
+    {
+        "name": "يوسف خالد",
+        "username": "youssef",
+        "password": "123",
+        "email": "youssef@agency.com",
+        "phone": "01000000008",
+        "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+        "role": "مونتير فيديو وتصحيح ألوان ومؤثرات",
+        "role_type": "employee",
+        "dept_code": "PRODUCTION",
+        "is_active": True,
+        "dept_codes_list": ["PRODUCTION"]
+    },
+    {
+        "name": "مصطفى شوقي",
+        "username": "mostafa_vfx",
+        "password": "123",
+        "email": "mostafa@agency.com",
+        "phone": "01000000009",
+        "avatar": "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150",
+        "role": "مصمم موشن جرافيكس ورسوم متحركة (Motion Graphics)",
+        "role_type": "employee",
+        "dept_code": "PRODUCTION",
+        "is_active": True,
+        "dept_codes_list": ["PRODUCTION"]
+    },
+    {
+        "name": "رنا الشافعي",
+        "username": "rana",
+        "password": "123",
+        "email": "rana@agency.com",
+        "phone": "01000000010",
+        "avatar": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150",
+        "role": "معلقة صوتية وهندسة صوت (Voiceover & Sound)",
+        "role_type": "employee",
+        "dept_code": "PRODUCTION",
+        "is_active": True,
+        "dept_codes_list": ["PRODUCTION"]
+    },
+
+    # 4. قسم التصميم والهوية البصرية (Branding & Visual Design)
+    {
+        "name": "سارة محمود",
+        "username": "head_design",
+        "password": "123",
+        "email": "sara@agency.com",
+        "phone": "01000000011",
+        "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+        "role": "رئيس قسم التصميم والهوية البصرية",
+        "role_type": "head",
+        "dept_code": "BRANDING",
+        "is_active": True,
+        "dept_codes_list": ["BRANDING"]
+    },
+    {
+        "name": "نور الدين حسن",
+        "username": "nour",
+        "password": "123",
+        "email": "nour@agency.com",
+        "phone": "01000000012",
+        "avatar": "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150",
+        "role": "مصمم واجهات وتجربة مستخدم (UI/UX Designer)",
+        "role_type": "employee",
+        "dept_code": "BRANDING",
+        "is_active": True,
+        "dept_codes_list": ["BRANDING"]
+    },
+    {
+        "name": "مينا مجدي",
+        "username": "mina",
+        "password": "123",
+        "email": "mina@agency.com",
+        "phone": "01000000013",
+        "avatar": "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150",
+        "role": "مصمم جرافيك وبنرات إعلانية (Graphic Designer)",
+        "role_type": "employee",
+        "dept_code": "BRANDING",
+        "is_active": True,
+        "dept_codes_list": ["BRANDING"]
+    },
+    {
+        "name": "فاطمة عادل",
+        "username": "fatma",
+        "password": "123",
+        "email": "fatma@agency.com",
+        "phone": "01000000014",
+        "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+        "role": "مصممة سوشيال ميديا وهوية بصرية (Brand Designer)",
+        "role_type": "employee",
+        "dept_code": "BRANDING",
+        "is_active": True,
+        "dept_codes_list": ["BRANDING"]
+    },
+
+    # 5. قسم البرمجة والمتاجر الإلكترونية (Dev & E-commerce)
+    {
+        "name": "عمر الفاروق",
+        "username": "head_dev",
+        "password": "123",
+        "email": "omar@agency.com",
+        "phone": "01000000015",
+        "avatar": "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150",
+        "role": "رئيس قسم البرمجة والمتاجر الإلكترونية",
+        "role_type": "head",
+        "dept_code": "DEV_ECOMMERCE",
+        "is_active": True,
+        "dept_codes_list": ["DEV_ECOMMERCE"]
+    },
+    {
+        "name": "طارق مصطفى",
+        "username": "tarek",
+        "password": "123",
+        "email": "tarek@agency.com",
+        "phone": "01000000016",
+        "avatar": "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150",
+        "role": "مختص منصات متاجر (سلة / زد / Shopify)",
+        "role_type": "employee",
+        "dept_code": "DEV_ECOMMERCE",
+        "is_active": True,
+        "dept_codes_list": ["DEV_ECOMMERCE"]
+    },
+    {
+        "name": "إسلام النجار",
+        "username": "eslam",
+        "password": "123",
+        "email": "eslam@agency.com",
+        "phone": "01000000017",
+        "avatar": "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150",
+        "role": "مطور واجهات ومتاجر (Frontend Web Developer)",
+        "role_type": "employee",
+        "dept_code": "DEV_ECOMMERCE",
+        "is_active": True,
+        "dept_codes_list": ["DEV_ECOMMERCE"]
+    },
+    {
+        "name": "هاني رضوان",
+        "username": "hany",
+        "password": "123",
+        "email": "hany@agency.com",
+        "phone": "01000000018",
+        "avatar": "https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?w=150",
+        "role": "مهندس تكامل وبوابات دفع وربط تقني (API & Integrations)",
+        "role_type": "employee",
+        "dept_code": "DEV_ECOMMERCE",
+        "is_active": True,
+        "dept_codes_list": ["DEV_ECOMMERCE"]
+    },
+
+    # 6. قسم الإعلانات الممولة والحملات (Performance Ads & Media Buying)
+    {
+        "name": "حسن الدسوقي",
+        "username": "head_ads",
+        "password": "123",
+        "email": "hassan@agency.com",
+        "phone": "01000000019",
+        "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+        "role": "رئيس قسم الإعلانات والحملات الممولة",
+        "role_type": "head",
+        "dept_code": "PERFORMANCE_ADS",
+        "is_active": True,
+        "dept_codes_list": ["PERFORMANCE_ADS"]
+    },
+    {
+        "name": "سلمى عبد العزيز",
+        "username": "salma",
+        "password": "123",
+        "email": "salma@agency.com",
+        "phone": "01000000020",
+        "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+        "role": "مختص إعلانات منصات (Meta / TikTok Ads)",
+        "role_type": "employee",
+        "dept_code": "PERFORMANCE_ADS",
+        "is_active": True,
+        "dept_codes_list": ["PERFORMANCE_ADS"]
+    },
+    {
+        "name": "محمود صبري",
+        "username": "mahmoud",
+        "password": "123",
+        "email": "mahmoud@agency.com",
+        "phone": "01000000021",
+        "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150",
+        "role": "مختص إعلانات محركات البحث (Google Ads & Snapchat)",
+        "role_type": "employee",
+        "dept_code": "PERFORMANCE_ADS",
+        "is_active": True,
+        "dept_codes_list": ["PERFORMANCE_ADS"]
+    },
+    {
+        "name": "ريهام فؤاد",
+        "username": "reham",
+        "password": "123",
+        "email": "reham@agency.com",
+        "phone": "01000000022",
+        "avatar": "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150",
+        "role": "محلل بيانات حملات ومعدلات تحويل (CRO & Analytics)",
+        "role_type": "employee",
+        "dept_code": "PERFORMANCE_ADS",
+        "is_active": True,
+        "dept_codes_list": ["PERFORMANCE_ADS"]
+    },
+
+    # 7. قسم الاستراتيجية والاستشارات (Strategy & Growth)
+    {
+        "name": "د. عمرو عثمان",
+        "username": "head_strategy",
+        "password": "123",
+        "email": "amr@agency.com",
+        "phone": "01000000023",
+        "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150",
+        "role": "استشاري تسويقي أول وبحوث سوق",
+        "role_type": "head",
+        "dept_code": "STRATEGY",
+        "is_active": True,
+        "dept_codes_list": ["STRATEGY"]
+    },
+    {
+        "name": "ليلى عبد الرحمن",
+        "username": "laila",
+        "password": "123",
+        "email": "laila@agency.com",
+        "phone": "01000000024",
+        "avatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150",
+        "role": "أخصائي أبحاث سوق وتحليل منافسين (Market Researcher)",
+        "role_type": "employee",
+        "dept_code": "STRATEGY",
+        "is_active": True,
+        "dept_codes_list": ["STRATEGY"]
+    },
+    {
+        "name": "خالد أنور",
+        "username": "khaled",
+        "password": "123",
+        "email": "khaled@agency.com",
+        "phone": "01000000025",
+        "avatar": "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150",
+        "role": "مخطط استراتيجي ونمو مبيعات (Growth Strategist)",
+        "role_type": "employee",
+        "dept_code": "STRATEGY",
+        "is_active": True,
+        "dept_codes_list": ["STRATEGY"]
+    },
+
+    # 8. قسم إدارة العملاء والعمليات (Account Management & Operations)
+    {
+        "name": "منى زكي",
+        "username": "mona",
+        "password": "123",
+        "email": "mona@agency.com",
+        "phone": "01000000026",
+        "avatar": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150",
+        "role": "مدير حسابات العملاء ومتابعة الرضا (Senior Account Manager)",
+        "role_type": "head",
+        "dept_code": "OPERATIONS",
+        "is_active": True,
+        "dept_codes_list": ["OPERATIONS"]
+    },
+    {
+        "name": "هبة الله يحيى",
+        "username": "heba",
+        "password": "123",
+        "email": "heba@agency.com",
+        "phone": "01000000027",
+        "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+        "role": "أخصائي خدمة عملاء ومتابعة تسليمات (Client Success Specialist)",
+        "role_type": "employee",
+        "dept_code": "OPERATIONS",
+        "is_active": True,
+        "dept_codes_list": ["OPERATIONS"]
+    },
+    {
+        "name": "وليد شريف",
+        "username": "waleed",
+        "password": "123",
+        "email": "waleed@agency.com",
+        "phone": "01000000028",
+        "avatar": "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150",
+        "role": "منسق عمليات وجداول زمنية (Operations Coordinator)",
+        "role_type": "employee",
+        "dept_code": "OPERATIONS",
+        "is_active": True,
+        "dept_codes_list": ["OPERATIONS"]
+    }
+]
+
+def sync_clean_team_members(target_session=None):
+    db = target_session if target_session is not None else SessionLocal()
+    should_close = target_session is None
+    try:
+        departments = {}
+        for d in db.query(models.Department).all():
+            if d.code:
+                departments[str(d.code).upper()] = d
+                departments[str(d.code).lower()] = d
+
+        if not departments:
+            return
+
+        for m_data in CLEAN_TEAM_DATA:
+            m_copy = dict(m_data)
+            username = m_copy.get("username")
+            dept_code = m_copy.pop("dept_code", None)
+            dept_codes_list = m_copy.pop("dept_codes_list", [])
+
+            primary_dept = departments.get(str(dept_code).upper()) if dept_code else None
+            if primary_dept:
+                m_copy["department_id"] = primary_dept.id
+
+            target_depts = []
+            for code in dept_codes_list:
+                dept_obj = departments.get(str(code).upper())
+                if dept_obj and dept_obj not in target_depts:
+                    target_depts.append(dept_obj)
+
+            existing = db.query(models.TeamMember).filter(models.TeamMember.username == username).first()
+            if existing:
+                existing.name = m_copy["name"]
+                existing.role = m_copy["role"]
+                if "email" in m_copy:
+                    existing.email = m_copy["email"]
+                if "phone" in m_copy:
+                    existing.phone = m_copy["phone"]
+                if "avatar" in m_copy:
+                    existing.avatar = m_copy["avatar"]
+                if "role_type" in m_copy:
+                    existing.role_type = m_copy["role_type"]
+                if primary_dept:
+                    existing.department_id = primary_dept.id
+                if target_depts:
+                    existing.departments = target_depts
+            else:
+                member = models.TeamMember(**m_copy)
+                db.add(member)
+                db.commit()
+                db.refresh(member)
+                if target_depts:
+                    member.departments = target_depts
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"Error syncing clean team members: {e}")
+    finally:
+        if should_close:
+            db.close()
+
 def seed_database(target_session=None):
     db = target_session if target_session is not None else SessionLocal()
     should_close = target_session is None

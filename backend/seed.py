@@ -2,6 +2,176 @@ from datetime import datetime, timedelta
 from database import SessionLocal, engine, Base
 import models
 
+OFFICIAL_DEPARTMENTS_DATA = [
+    {
+        "name_ar": "قسم المحتوى والسوشيال ميديا",
+        "name_en": "Social Media & Content",
+        "code": "SOCIAL_CONTENT",
+        "icon": "Megaphone",
+        "color": "#8b5cf6",
+        "description": "كتابة المحتوى الإعلاني، خطط السوشيال ميديا، التدقيق اللغوي ومراجعة الجودة، وإدارة الحسابات والتفاعل.",
+        "roles": [
+            "كاتب محتوى إعلاني وتسويقي (Copywriter)",
+            "كاتب محتوى سوشيال ميديا (Social Media Content Creator)",
+            "مصحح لغوي ومراجع جودة (Proofreader & QA)",
+            "مدير حسابات سوشيال ميديا (Account Manager)",
+            "مصمم جرافيك سوشيال ميديا",
+            "مسؤول جدولة ونشر"
+        ],
+        "services": [
+            "نصوص الإعلانات الممولة وصفحات الهبوط (24-48 ساعة)",
+            "إعداد وتطوير خطة المحتوى الشهرية والريلز",
+            "مراجعة وتدقيق الجودة اللغوية للنصوص",
+            "إدارة النشر والتفاعل اليومي على الحسابات"
+        ]
+    },
+    {
+        "name_ar": "قسم الإنتاج المرئي والمسموع",
+        "name_en": "Visual & Audio Production",
+        "code": "PRODUCTION",
+        "icon": "Camera",
+        "color": "#f59e0b",
+        "description": "التصوير الميداني والإعلاني، المونتاج وتصحيح الألوان، كتابة السيناريو، التصوير بالدرون، والتعليق الصوتي.",
+        "roles": [
+            "مصور فيديو / مخرج (Videographer / Director)",
+            "كاتب سيناريو (Scriptwriter)",
+            "مونتير فيديو (Video Editor)",
+            "مشغل درون معتمد (Drone Operator)",
+            "فنان تعليق صوتي (Voice Over)",
+            "مصور فوتوغرافي إعلاني"
+        ],
+        "services": [
+            "تصوير ميداني وجلسات تصوير منتجات 4K",
+            "كتابة السيناريو وبناء لوحة القصة (Storyboard)",
+            "مونتاج وقص وتعديل ألوان ومؤثرات الفيديو (3-5 أيام)",
+            "تصوير جوي بالدرون للمواقع والفعاليات",
+            "تسجيل تعليق صوتي إعلاني احترافي (1-2 يوم)"
+        ]
+    },
+    {
+        "name_ar": "قسم التصميم والهوية البصرية",
+        "name_en": "Branding & Visual Identity",
+        "code": "BRANDING",
+        "icon": "Palette",
+        "color": "#ec4899",
+        "description": "بناء الهويات البصرية الكاملة، الشعارات، أدلة الاستخدام، وتصميم واجهات وتجربة المستخدم UI/UX.",
+        "roles": [
+            "مصمم هوية بصرية (Brand Designer)",
+            "مصمم واجهات وتجربة مستخدم (UI/UX)",
+            "مصمم جرافيك ومطبوعات"
+        ],
+        "services": [
+            "تصميم الشعار وبناء الهوية البصرية ودليل الاستخدام",
+            "تصميم واجهات المتاجر والتطبيقات وتجربة المستخدم (UI/UX)",
+            "تصميم المطبوعات والبوسترات التسويقية"
+        ]
+    },
+    {
+        "name_ar": "قسم البرمجة والمتاجر الإلكترونية",
+        "name_en": "Web & E-Commerce Development",
+        "code": "DEV_ECOMMERCE",
+        "icon": "Code",
+        "color": "#10b981",
+        "description": "تأسيس وإعداد المتاجر الإلكترونية (سلة / زد)، تطوير الواجهات والمواقع المخصصة، تحسين SEO، وإدارة المتاجر.",
+        "roles": [
+            "مختص متاجر إلكترونية (سلة / زد)",
+            "مطور واجهات (Front-end)",
+            "مختص SEO تقني",
+            "مسؤول إدارة متجر"
+        ],
+        "services": [
+            "تأسيس المتجر وربط بوابات الدفع والشحن (3-5 أيام)",
+            "برمجة وتطوير واجهات مواقع وصفحات هبوط مخصصة (Front-end)",
+            "تهيئة محركات البحث وتحسين سرعة المتجر (SEO)",
+            "رفع وتنسيق المنتجات وإدارة المخزون والطلبات"
+        ]
+    },
+    {
+        "name_ar": "قسم الإعلانات الممولة والحملات",
+        "name_en": "Performance Marketing & Paid Ads",
+        "code": "PERFORMANCE_ADS",
+        "icon": "TrendingUp",
+        "color": "#3b82f6",
+        "description": "إدارة الحملات الممولة على ميتا وتيك توك وسناب شات وجوجل ولينكدإن، وتحليل البيانات الإعلانية وتكلفة الاستحواذ.",
+        "roles": [
+            "مختص إعلانات منصات التواصل (Meta / TikTok / Snapchat)",
+            "مختص إعلانات جوجل (Google Ads)",
+            "مختص إعلانات لينكدإن (LinkedIn / B2B)",
+            "مختص تحليل بيانات إعلانية"
+        ],
+        "services": [
+            "إعداد وإطلاق حملات التواصل ومتابعة التحويلات (B2C)",
+            "إدارة حملات البحث وشراء جوجل (Google Search & Shopping)",
+            "حملات B2B واستقطاب الشركات عبر لينكدإن",
+            "تحليل نتائج الحملات وإعداد تقارير ROAS و CAC"
+        ]
+    },
+    {
+        "name_ar": "قسم الاستراتيجية والاستشارات",
+        "name_en": "Strategy & Consulting",
+        "code": "STRATEGY",
+        "icon": "Target",
+        "color": "#f97316",
+        "description": "بناء الاستراتيجيات التسويقية الشاملة، دراسات وبحوث السوق، وتحليل المنافسين والفرص.",
+        "roles": [
+            "استشاري تسويقي أول",
+            "محلل منافسين وبحوث سوق"
+        ],
+        "services": [
+            "بناء الخطة الاستراتيجية التسويقية الشاملة للنمو (5-7 أيام)",
+            "إعداد دراسة السوق وتحليل المنافسين والفجوات (3-5 أيام)"
+        ]
+    },
+    {
+        "name_ar": "قسم إدارة العملاء والعمليات",
+        "name_en": "Client Success & Operations",
+        "code": "OPERATIONS",
+        "icon": "Briefcase",
+        "color": "#6366f1",
+        "description": "إدارة التواصل مع العملاء، التنسيق الداخلي بين الأقسام، متابعة مواعيد التسليم والجودة.",
+        "roles": [
+            "مدير حساب مخصص (Account Manager)",
+            "منسق عمليات داخلي"
+        ],
+        "services": [
+            "إدارة العلاقة والتواصل المباشر مع العميل ومتابعة الرضا",
+            "تنسيق وتوزيع المهام بين الأقسام ومتابعة مواعيد التسليم (SLA)"
+        ]
+    }
+]
+
+def sync_default_departments(target_session=None):
+    db = target_session if target_session is not None else SessionLocal()
+    should_close = target_session is None
+    try:
+        for d in OFFICIAL_DEPARTMENTS_DATA:
+            existing = db.query(models.Department).filter(
+                (models.Department.code == d["code"]) | (models.Department.name_ar == d["name_ar"])
+            ).first()
+            if not existing:
+                new_dep = models.Department(
+                    name_ar=d["name_ar"],
+                    name_en=d["name_en"],
+                    code=d["code"],
+                    icon=d["icon"],
+                    color=d["color"],
+                    description=d["description"],
+                    roles=d["roles"],
+                    services=d["services"]
+                )
+                db.add(new_dep)
+            else:
+                if not existing.roles or len(existing.roles) == 0:
+                    existing.roles = d["roles"]
+                if not existing.services or len(existing.services) == 0:
+                    existing.services = d["services"]
+        db.commit()
+    except Exception as e:
+        print(f"Error syncing default departments: {e}")
+    finally:
+        if should_close:
+            db.close()
+
 def sync_member_departments(target_session=None):
     db = target_session if target_session is not None else SessionLocal()
     should_close = target_session is None

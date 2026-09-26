@@ -9,7 +9,7 @@ from fastapi.exceptions import RequestValidationError
 
 from database.session import engine, Base
 from database.migrations import run_migrations
-from seed import seed_database, sync_member_departments, sync_clean_team_members
+from seed import seed_database, sync_member_departments, sync_clean_team_members, sync_default_departments
 
 from routers import (
     auth_router,
@@ -61,10 +61,8 @@ async def lifespan(app: FastAPI):
     from database.session import SessionLocal
     import models
     with SessionLocal() as db:
-        if db.query(models.Department).count() == 0:
-            seed_database(target_session=db)
-        else:
-            sync_clean_team_members(target_session=db)
+        sync_default_departments(target_session=db)
+        sync_clean_team_members(target_session=db)
         sync_member_departments(target_session=db)
     logger.info("Malam OS backend started successfully (env=%s)", _ENV)
     yield

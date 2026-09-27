@@ -26,7 +26,7 @@ def run_test():
 
     # 3. Manager/Admin checks pending reviews
     pending = crud.get_pending_review_stages(db)
-    assert any(p["stage"].id == stage.id for p in pending), "Stage not found in pending reviews"
+    assert any(p.stage.id == stage.id for p in pending), "Stage not found in pending reviews"
     print(f"[OK] Step 2: Manager/Admin retrieved pending queue ({len(pending)} pending tasks).")
 
     # 4. Manager requests revision with notes

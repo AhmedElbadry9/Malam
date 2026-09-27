@@ -216,7 +216,8 @@ def update_task_stage(db: Session, client_id: int, stage_id: int, stage_in: sche
 
     # If stage status changed to completed, revoke Drive access if no other active stages
     if update_data.get("status") == "completed" and stage.assigned_member_id:
-        _sync_member_drive_access(db, stage.client, stage.assigned_member_id, action="revoke")
+        db.flush()
+        _sync_member_drive_access(db, stage.client, stage.assigned_member_id, action="revoke", exclude_stage_id=stage.id)
 
     performer = current_user.name if current_user else "System Admin"
 
@@ -364,7 +365,8 @@ def review_task_stage(db: Session, req: schemas.TaskReviewRequest) -> models.Tas
 
         # Revoke Drive permissions if member has no other active tasks for this client
         if stage.assigned_member_id:
-            _sync_member_drive_access(db, client, stage.assigned_member_id, action="revoke")
+            db.flush()
+            _sync_member_drive_access(db, client, stage.assigned_member_id, action="revoke", exclude_stage_id=stage.id)
 
         audit = models.AuditLog(
             client_id=client.id,
@@ -440,7 +442,8 @@ def complete_task_stage(db: Session, req: schemas.StageCompleteRequest) -> model
 
     # Revoke Drive permissions if member has no other active tasks for this client
     if stage.assigned_member_id:
-        _sync_member_drive_access(db, client, stage.assigned_member_id, action="revoke")
+        db.flush()
+        _sync_member_drive_access(db, client, stage.assigned_member_id, action="revoke", exclude_stage_id=stage.id)
 
     audit = models.AuditLog(
         client_id=client.id,

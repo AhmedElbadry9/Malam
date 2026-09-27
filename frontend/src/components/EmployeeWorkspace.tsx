@@ -717,24 +717,6 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between py-1 border-b border-slate-850">
-                    <span className="text-slate-400 text-xs">رقم الهاتف:</span>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-slate-200 font-mono text-[11px]">
-                        {selectedTaskForDetails.client.phone || 'غير مسجل'}
-                      </span>
-                      {selectedTaskForDetails.client.phone && (
-                        <button
-                          type="button"
-                          onClick={() => handleCopyText(selectedTaskForDetails.client.phone || '', 'phone')}
-                          className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer"
-                          title="نسخ الهاتف"
-                        >
-                          {copiedField === 'phone' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                        </button>
-                      )}
-                    </div>
-                  </div>
 
                   {selectedTaskForDetails.client.website_url && (
                     <div className="flex items-center justify-between pt-1">

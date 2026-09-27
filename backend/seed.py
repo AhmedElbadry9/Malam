@@ -506,10 +506,15 @@ CLEAN_TEAM_DATA = [
     }
 ]
 
-def sync_clean_team_members(target_session=None):
+def sync_clean_team_members(target_session=None, only_if_empty=False):
     db = target_session if target_session is not None else SessionLocal()
     should_close = target_session is None
     try:
+        if only_if_empty:
+            count = db.query(models.TeamMember).count()
+            if count > 0:
+                return
+
         departments = {}
         for d in db.query(models.Department).all():
             if d.code:

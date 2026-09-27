@@ -12,11 +12,8 @@ router = APIRouter(prefix="/api/members", tags=["Team Members & Staff"])
 @router.get("", response_model=List[schemas.TeamMemberOut])
 def get_members(department_id: Optional[int] = None, db: Session = Depends(get_db)):
     """
-    استرجاع قائمة الموظفين مع إمكانية التصفية بحسب القسم ومزامنة الموظفين الافتراضيين إذا لزم.
+    استرجاع قائمة الموظفين مع إمكانية التصفية بحسب القسم.
     """
-    if db.query(models.TeamMember).count() < 20:
-        from seed import sync_clean_team_members
-        sync_clean_team_members(db)
     return member_service.get_members(db, department_id)
 
 @router.post("/sync-defaults")

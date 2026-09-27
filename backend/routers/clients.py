@@ -111,11 +111,23 @@ def get_client_drive_items(client_id: int, db: Session = Depends(get_db)):
     """
     return client_service.get_client_drive_items(db, client_id)
 
+from fastapi import APIRouter, Depends, status, Query, HTTPException
+
 @router.post("/{client_id}/share-drive")
-def share_client_drive(client_id: int, req: schemas.ShareDriveRequest, db: Session = Depends(get_db)):
+def share_client_drive(
+    client_id: int, 
+    req: schemas.ShareDriveRequest, 
+    current_user: Optional[models.TeamMember] = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
     """
     مشاركة مجلد Google Drive مع بريد إلكتروني وتحديد الصلاحية (Viewer / Editor).
     """
+    if current_user and current_user.role_type not in ["admin", "manager", "super_admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="منح وإدارة صلاحيات Google Drive تقتصر على إدارة الوكالة والمدراء فقط."
+        )
     return client_service.share_client_drive(db, client_id, req)
 
 @router.get("/{client_id}/drive-permissions")
@@ -126,6 +138,7 @@ def get_client_drive_permissions(
 ):
     """
     عرض قائمة الأذونات الحالية لمجلد Google Drive الخاص بالعميل (أو مجلد فرعي محدد).
+    متاحة لجميع الأدوار للاطلاع والشفافية.
     """
     return client_service.get_client_drive_permissions(db, client_id, folder_id=folder_id)
 
@@ -134,11 +147,17 @@ def update_client_drive_permission(
     client_id: int,
     permission_id: str,
     req: schemas.UpdateDrivePermissionRequest,
+    current_user: Optional[models.TeamMember] = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
     تعديل دور أو صلاحية مستخدم على مجلد Google Drive.
     """
+    if current_user and current_user.role_type not in ["admin", "manager", "super_admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="تعديل صلاحيات Google Drive تقتصر على إدارة الوكالة والمدراء فقط."
+        )
     return client_service.update_client_drive_permission(db, client_id, permission_id, req)
 
 @router.delete("/{client_id}/drive-permissions/{permission_id}")
@@ -146,11 +165,17 @@ def delete_client_drive_permission(
     client_id: int,
     permission_id: str,
     folder_id: Optional[str] = Query(None),
+    current_user: Optional[models.TeamMember] = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
     إلغاء وحذف صلاحية وصول مستخدم إلى مجلد Google Drive.
     """
+    if current_user and current_user.role_type not in ["admin", "manager", "super_admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="حذف صلاحيات Google Drive تقتصر على إدارة الوكالة والمدراء فقط."
+        )
     return client_service.delete_client_drive_permission(db, client_id, permission_id, folder_id=folder_id)
 
 @router.delete("/{client_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -423,6 +423,8 @@ function MainApp() {
       {selectedDriveClient && (
         <DriveFolderModal
           client={selectedDriveClient}
+          members={members}
+          canManageAccess={isManagement}
           onClose={() => setSelectedDriveClient(null)}
           onOpenBriefModal={setSelectedBriefClient}
         />

@@ -4,7 +4,7 @@ import {
   RotateCcw, ExternalLink, ShieldCheck, Users, Search,
   Check, UserCheck, Send, AlertTriangle,
   Layers, History, Edit, FileText,
-  Globe, Sparkles
+  Globe, Sparkles, Copy
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import type { Client, Department, TeamMember, TaskStage } from '../types';
@@ -56,8 +56,28 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
     memberDeptIds.length === 1 ? memberDeptIds[0] : (memberDeptIds.length > 0 ? memberDeptIds[0] : 'all')
   );
 
-  const [activeTab, setActiveTab] = useState<'dispatch' | 'my_tasks' | 'review' | 'team'>('dispatch');
+  const [activeTab, setActiveTab] = useState<'dispatch' | 'my_tasks' | 'review' | 'team' | 'completed'>('dispatch');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedSubmissionToView, setSelectedSubmissionToView] = useState<{ client: Client; stage: TaskStage } | null>(null);
+  const [copiedSubmissionLink, setCopiedSubmissionLink] = useState(false);
+
+  const handleCopySubmissionLink = (url: string) => {
+    if (!url) return;
+    navigator.clipboard.writeText(url);
+    setCopiedSubmissionLink(true);
+    setTimeout(() => setCopiedSubmissionLink(false), 2000);
+  };
+
+  const formatTimestamp = (ts?: string | null) => {
+    if (!ts) return 'غير محدد';
+    const date = new Date(ts);
+    return date.toLocaleString('ar-EG', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
 
   // UNIFIED TASK DISPATCH & DIRECTIVES MODAL STATE (Single Hub - No Duplicates)
   const [selectedTaskForDispatch, setSelectedTaskForDispatch] = useState<{ client: Client; stage: TaskStage } | null>(null);
@@ -139,6 +159,8 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
       list = myDirectTasks;
     } else if (activeTab === 'dispatch') {
       list = deptTasks.filter(item => item.stage.status !== 'completed');
+    } else if (activeTab === 'completed') {
+      list = completedTasks;
     }
 
     if (searchTerm.trim()) {
@@ -355,7 +377,15 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
             <span className="text-base font-black text-amber-400">{reviewTasks.length}</span>
           </div>
 
-          <div className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-center">
+          <div 
+            onClick={() => setActiveTab('completed')}
+            className={`px-3 py-1.5 rounded-xl border text-center cursor-pointer transition-all ${
+              activeTab === 'completed' 
+                ? 'bg-emerald-500/20 border-emerald-500 ring-1 ring-emerald-400' 
+                : 'bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20'
+            }`}
+            title="عرض سجل وتفاصيل المهام المكتملة"
+          >
             <span className="text-[10px] text-emerald-300 block font-medium">مكتمل</span>
             <span className="text-base font-black text-emerald-400">{completedTasks.length}</span>
           </div>
@@ -469,6 +499,24 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
           >
             <Users className="w-4 h-4" />
             <span>أعضاء الفريق والضغط</span>
+          </button>
+
+          {/* Tab 5: Completed Tasks & History */}
+          <button
+            onClick={() => setActiveTab('completed')}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+              activeTab === 'completed'
+                ? 'bg-emerald-600 text-white shadow-sm font-black'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+            }`}
+          >
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <span>سجل المهام المكتملة</span>
+            {completedTasks.length > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-300">
+                {completedTasks.length}
+              </span>
+            )}
           </button>
         </div>
 
@@ -903,6 +951,225 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
             );
           })}
         </div>
+      )}
+
+      {/* 5. Tab Content: Completed Tasks Archive & History */}
+      {activeTab === 'completed' && (
+        <Card className="overflow-hidden border-slate-800">
+          <div className="overflow-x-auto">
+            <table className="w-full text-right text-xs">
+              <thead className="bg-slate-950/80 text-slate-400 font-bold border-b border-slate-800 text-center">
+                <tr>
+                  <th className="p-3.5 text-center">الشركة والمشروع</th>
+                  <th className="p-3.5 text-center">المرحلة المكتملة</th>
+                  <th className="p-3.5 text-center">الموظف المنفذ</th>
+                  <th className="p-3.5 text-center">تاريخ وساعة الاعتماد</th>
+                  <th className="p-3.5 text-center">مخرجات وشرح التسليم</th>
+                  <th className="p-3.5 text-center">السجل والملفات</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60 text-slate-300">
+                {currentTabTasks.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="p-8 text-center">
+                      <EmptyState
+                        icon={<CheckCircle2 className="w-8 h-8 text-emerald-400" />}
+                        title="لا توجد مهام مكتملة في القسم حتى الآن"
+                        description="عندما يتم اعتماد مهام الموظفين أو تسليمها بنجاح، ستتم أرشفتها هنا لتتمكن من مراجعة سجلها ومخرجاتها في أي وقت."
+                      />
+                    </td>
+                  </tr>
+                ) : (
+                  currentTabTasks.map(({ client, stage }) => {
+                    const assignedMem = deptMembers.find(m => m.id === stage.assigned_member_id);
+                    const isAssignedToMe = stage.assigned_member_id === currentMember.id;
+                    const hasDeliverable = !!(stage.deliverable_url || stage.deliverable_note);
+
+                    return (
+                      <tr key={stage.id} className="hover:bg-slate-800/40 transition-colors">
+                        {/* Company & Client */}
+                        <td className="p-3.5 text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenDispatch(client, stage)}
+                            className="group cursor-pointer hover:bg-white/5 p-2 rounded-xl transition-all block w-full text-center"
+                            title="عرض تفاصيل المتجر والمهمة"
+                          >
+                            <div className="font-bold text-white text-sm group-hover:text-emerald-300 flex items-center justify-center gap-1.5">
+                              <Building2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                              <span>{client.company_name}</span>
+                            </div>
+                          </button>
+                        </td>
+
+                        {/* Stage Name */}
+                        <td className="p-3.5 text-center">
+                          <div className="flex flex-col items-center justify-center gap-1">
+                            <span className="text-white text-xs font-bold">{stage.stage_name}</span>
+                            <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                              <Check className="w-3 h-3" />
+                              <span>مكتمل ومعتمد</span>
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Assigned Employee */}
+                        <td className="p-3.5 text-center">
+                          {assignedMem ? (
+                            <div className="flex flex-col items-center justify-center text-xs">
+                              <span className="font-bold text-white flex items-center gap-1">
+                                <span>👤 {assignedMem.name}</span>
+                                {isAssignedToMe && <span className="text-[10px] text-indigo-400">(أنت)</span>}
+                              </span>
+                              <span className="text-[10px] text-slate-400">{assignedMem.role}</span>
+                            </div>
+                          ) : (
+                            <span className="text-slate-500 italic text-xs">غير محدد</span>
+                          )}
+                        </td>
+
+                        {/* Completion Timestamp */}
+                        <td className="p-3.5 text-center text-xs text-slate-400 font-mono" dir="ltr">
+                          {formatTimestamp(stage.completion_timestamp || stage.reviewed_at)}
+                        </td>
+
+                        {/* Deliverables & Submission Explanation */}
+                        <td className="p-3.5 text-center">
+                          {hasDeliverable ? (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedSubmissionToView({ client, stage })}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-indigo-300 hover:text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+                              title="عرض رابط التسليم والشرح وملاحظات الإنجاز"
+                            >
+                              <FileText className="w-3.5 h-3.5 text-indigo-400" />
+                              <span>مخرجات التسليم والشرح</span>
+                            </button>
+                          ) : (
+                            <span className="text-[11px] text-slate-500 italic">لا توجد مخرجات مسجلة</span>
+                          )}
+                        </td>
+
+                        {/* History & Drive Actions */}
+                        <td className="p-3.5 text-center">
+                          <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
+                            {onOpenHistoryModal && (
+                              <button
+                                type="button"
+                                onClick={() => onOpenHistoryModal(stage, client)}
+                                className="px-2.5 py-1.5 rounded-xl bg-slate-800/80 hover:bg-indigo-500/20 text-slate-300 hover:text-indigo-300 border border-slate-700/60 hover:border-indigo-500/30 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+                                title="عرض سجل دورة حياة المهمة بالكامل"
+                              >
+                                <History className="w-3.5 h-3.5 text-indigo-400" />
+                                <span>سجل الدورة</span>
+                              </button>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => onOpenDriveModal(client)}
+                              className="p-1.5 rounded-xl bg-slate-800/80 hover:bg-amber-500/20 text-slate-400 hover:text-amber-300 border border-slate-700/60 hover:border-amber-500/30 transition-all cursor-pointer shadow-sm"
+                              title="فتح مجلد جوجل درايف"
+                            >
+                              <FolderGit2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      {/* Modal: View Deliverables & Submission Explanation for Head */}
+      {selectedSubmissionToView && (
+        <Modal
+          isOpen={true}
+          onClose={() => setSelectedSubmissionToView(null)}
+          title="تفاصيل ومخرجات التسليم"
+          description={`${selectedSubmissionToView.client.company_name} — ${selectedSubmissionToView.stage.stage_name}`}
+          icon={<FileText className="w-5 h-5 text-indigo-400" />}
+          maxWidth="lg"
+          footer={
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setSelectedSubmissionToView(null)}
+            >
+              إغلاق
+            </Button>
+          }
+        >
+          <div className="space-y-4 text-right">
+            
+            {/* Stage Status Strip */}
+            <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between gap-3 text-xs">
+              <span className="text-slate-400 font-medium">حالة المهمة:</span>
+              <StatusBadge status={selectedSubmissionToView.stage.status} size="sm" />
+            </div>
+
+            {/* Explanation & Notes Box */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5 text-amber-400" />
+                <span>الشرح وتفاصيل ما تم إنجازه (ملاحظات التسليم):</span>
+              </label>
+              {selectedSubmissionToView.stage.deliverable_note ? (
+                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 leading-relaxed whitespace-pre-wrap font-medium">
+                  {selectedSubmissionToView.stage.deliverable_note}
+                </div>
+              ) : (
+                <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/60 text-xs text-slate-500 italic">
+                  لم يتم كتابة شرح نصي مع هذا التسليم.
+                </div>
+              )}
+            </div>
+
+            {/* Link Box */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                <ExternalLink className="w-3.5 h-3.5 text-indigo-400" />
+                <span>رابط ملف العمل أو المخرجات المسجل:</span>
+              </label>
+              {selectedSubmissionToView.stage.deliverable_url ? (
+                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <span className="font-mono text-xs text-indigo-300 font-bold select-all break-all" dir="ltr">
+                    {selectedSubmissionToView.stage.deliverable_url}
+                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleCopySubmissionLink(selectedSubmissionToView.stage.deliverable_url || '')}
+                      className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer border border-slate-700"
+                      title="نسخ الرابط"
+                    >
+                      {copiedSubmissionLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copiedSubmissionLink ? 'تم النسخ' : 'نسخ'}</span>
+                    </button>
+                    <a
+                      href={selectedSubmissionToView.stage.deliverable_url.startsWith('http') ? selectedSubmissionToView.stage.deliverable_url : `https://${selectedSubmissionToView.stage.deliverable_url}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>فتح الرابط ↗</span>
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/60 text-xs text-slate-500 italic">
+                  لم يتم إرفاق رابط خارجي مع هذا التسليم.
+                </div>
+              )}
+            </div>
+
+          </div>
+        </Modal>
       )}
 
       {/* Review / Request Revision Modal */}

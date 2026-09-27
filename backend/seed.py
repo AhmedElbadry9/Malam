@@ -172,6 +172,34 @@ def sync_default_departments(target_session=None):
         if should_close:
             db.close()
 
+def ensure_default_admin(target_session=None):
+    """Ensures at least one Admin account exists so the system is always accessible."""
+    db = target_session if target_session is not None else SessionLocal()
+    should_close = target_session is None
+    try:
+        admin_count = db.query(models.TeamMember).filter(
+            models.TeamMember.role_type.in_(["admin", "super_admin"])
+        ).count()
+
+        if admin_count == 0:
+            admin_user = models.TeamMember(
+                name="أحمد المنشاوي",
+                username="admin",
+                password="123",
+                email="admin@agency.com",
+                phone="01000000001",
+                role="المدير التنفيذي والعام (CEO)",
+                role_type="admin",
+                is_active=True
+            )
+            db.add(admin_user)
+            db.commit()
+    except Exception as e:
+        print(f"Error ensuring default admin: {e}")
+    finally:
+        if should_close:
+            db.close()
+
 def sync_member_departments(target_session=None):
     db = target_session if target_session is not None else SessionLocal()
     should_close = target_session is None

@@ -9,7 +9,7 @@ from fastapi.exceptions import RequestValidationError
 
 from database.session import engine, Base
 from database.migrations import run_migrations
-from seed import seed_database, sync_member_departments, sync_clean_team_members, sync_default_departments
+from seed import sync_member_departments, sync_default_departments, ensure_default_admin
 
 from routers import (
     auth_router,
@@ -62,10 +62,7 @@ async def lifespan(app: FastAPI):
     import models
     with SessionLocal() as db:
         sync_default_departments(target_session=db)
-        # Only seed default team members on initial fresh setup when table is completely empty
-        has_any_members = db.query(models.TeamMember).first() is not None
-        if not has_any_members:
-            sync_clean_team_members(target_session=db)
+        ensure_default_admin(target_session=db)
         sync_member_departments(target_session=db)
     logger.info("Malam OS backend started successfully (env=%s)", _ENV)
     yield

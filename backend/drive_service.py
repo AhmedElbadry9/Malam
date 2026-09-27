@@ -9,9 +9,9 @@ SCOPES = ['https://www.googleapis.com/auth/drive']
 SERVICE_ACCOUNT_FILE = os.path.join(os.path.dirname(__file__), 'credentials.json')
 
 # The ID of the main "Malam Clients" folder
-MAIN_FOLDER_ID = os.environ.get('GOOGLE_DRIVE_MAIN_FOLDER_ID') or '1dhuayx660p7NyCnxeAXTQ0tPZUfuy8j8'
-MASTER_TEMPLATE_SHEET_ID = os.environ.get('GOOGLE_SHEET_TEMPLATE_ID') or '1ovyYQ1VcWBS9LhUg9IuAucHwE9qCGjPOOIKYsW25pZI'
-DEFAULT_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw6rpEZCNIe1bel7SiBRdS0auLVOP5K36oEh2su-ypwEEJpIui_0PJ96Bi4eRZZy5-7/exec'
+MAIN_FOLDER_ID = os.environ.get('GOOGLE_DRIVE_MAIN_FOLDER_ID') or '1RxiHySli6BJKQnYsKQxyNHCkn4EpvgjG'
+MASTER_TEMPLATE_SHEET_ID = os.environ.get('GOOGLE_SHEET_TEMPLATE_ID') or '1HBAdhk5FbwH_1RgCP5sAfkaqMrxP120W4BgbtcyKiwM'
+DEFAULT_APPS_SCRIPT_URL = os.environ.get('GOOGLE_APPS_SCRIPT_URL') or 'https://script.google.com/macros/s/AKfycbwd8dc-KwJmBSrZD-mcKrSH0JXMcvAuGYXDA5v9OBySb7fupLEZiKjNE0-EjDt9NE6V/exec'
 
 _cached_service = None
 

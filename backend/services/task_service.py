@@ -183,6 +183,13 @@ def update_task_stage(db: Session, client_id: int, stage_id: int, stage_in: sche
 
     update_data = stage_in.model_dump(exclude_unset=True)
 
+    # Guard: Completed stages cannot be reassigned or modified
+    if stage.status == "completed" and "assigned_member_id" in update_data and update_data["assigned_member_id"] != old_member_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="لا يمكن إعادة تكليف أو تغيير موظف مرحلة مكتملة ومؤرشفة بالفعل"
+        )
+
     old_member_id = stage.assigned_member_id
     reassigned = False
     new_member_id = None

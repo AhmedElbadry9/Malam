@@ -193,7 +193,7 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
   // Submit the unified dispatch form (Assign + Directives + Status)
   const handleDispatchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedTaskForDispatch) return;
+    if (!selectedTaskForDispatch || selectedTaskForDispatch.stage.status === 'completed') return;
 
     try {
       setIsSubmittingDispatch(true);
@@ -1296,9 +1296,17 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
             {/* ─── Header ─── */}
             <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between gap-3 shrink-0 bg-slate-950/80">
               <div className="min-w-0">
-                <h2 className="text-base font-black text-white leading-tight truncate">
-                  {selectedTaskForDispatch.stage.stage_name}
-                </h2>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-base font-black text-white leading-tight truncate">
+                    {selectedTaskForDispatch.stage.stage_name}
+                  </h2>
+                  {selectedTaskForDispatch.stage.status === 'completed' && (
+                    <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                      <Check className="w-3 h-3" />
+                      <span>مكتملة ومؤرشفة</span>
+                    </span>
+                  )}
+                </div>
                 <div className="text-xs text-slate-400 mt-0.5 flex items-center gap-1.5 font-medium">
                   <Building2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
                   <span className="text-slate-200 font-bold">{selectedTaskForDispatch.client.company_name}</span>
@@ -1314,42 +1322,55 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
             </div>
 
             {/* ─── Tabs Switcher (RTL: Tab 1 Info on Right, Tab 2 Assign on Left) ─── */}
-            <div className="flex items-center border-b border-slate-800 bg-slate-900/60 px-5 gap-1 shrink-0">
-              <button
-                type="button"
-                onClick={() => setDispatchModalTab('info')}
-                className={`flex items-center gap-2 py-3 px-4 text-xs font-bold border-b-2 transition-all cursor-pointer ${
-                  dispatchModalTab === 'info'
-                    ? 'border-indigo-500 text-indigo-400 bg-indigo-500/[0.08]'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <FileText className="w-4 h-4" />
-                <span>بيانات العميل والمتطلبات</span>
-                {(selectedTaskForDispatch.stage.description || selectedTaskForDispatch.client.request_details) && (
-                  <span className="w-2 h-2 rounded-full bg-indigo-400 shadow-sm shadow-indigo-400"></span>
-                )}
-              </button>
+            {selectedTaskForDispatch.stage.status === 'completed' ? (
+              <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900/60 px-5 py-3 shrink-0">
+                <div className="flex items-center gap-2 text-xs font-bold text-indigo-400">
+                  <FileText className="w-4 h-4" />
+                  <span>بيانات المتجر والمتطلبات (عرض فقط)</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-2.5 py-1 rounded-lg">
+                  <Check className="w-3.5 h-3.5" />
+                  <span>المهمة مكتملة ومعتمدة — التكليف مغلق</span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center border-b border-slate-800 bg-slate-900/60 px-5 gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setDispatchModalTab('info')}
+                  className={`flex items-center gap-2 py-3 px-4 text-xs font-bold border-b-2 transition-all cursor-pointer ${
+                    dispatchModalTab === 'info'
+                      ? 'border-indigo-500 text-indigo-400 bg-indigo-500/[0.08]'
+                      : 'border-transparent text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>بيانات العميل والمتطلبات</span>
+                  {(selectedTaskForDispatch.stage.description || selectedTaskForDispatch.client.request_details) && (
+                    <span className="w-2 h-2 rounded-full bg-indigo-400 shadow-sm shadow-indigo-400"></span>
+                  )}
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setDispatchModalTab('assign')}
-                className={`flex items-center gap-2 py-3 px-4 text-xs font-bold border-b-2 transition-all cursor-pointer ${
-                  dispatchModalTab === 'assign'
-                    ? 'border-teal-500 text-teal-400 bg-teal-500/[0.08]'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <UserCheck className="w-4 h-4" />
-                <span>تكليف وتوجيه المهمة</span>
-              </button>
-            </div>
+                <button
+                  type="button"
+                  onClick={() => setDispatchModalTab('assign')}
+                  className={`flex items-center gap-2 py-3 px-4 text-xs font-bold border-b-2 transition-all cursor-pointer ${
+                    dispatchModalTab === 'assign'
+                      ? 'border-teal-500 text-teal-400 bg-teal-500/[0.08]'
+                      : 'border-transparent text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <UserCheck className="w-4 h-4" />
+                  <span>تكليف وتوجيه المهمة</span>
+                </button>
+              </div>
+            )}
 
             {/* ─── Scrollable Tab Content ─── */}
             <div className="overflow-y-auto flex-1 text-right">
 
               {/* ═══ TAB 1: ASSIGNMENT & DIRECTIVES ═══ */}
-              {dispatchModalTab === 'assign' && (
+              {selectedTaskForDispatch.stage.status !== 'completed' && dispatchModalTab === 'assign' && (
                 <div className="p-5 space-y-4 animate-fadeIn">
                   
                   {/* Quick Client Context Strip */}
@@ -1573,11 +1594,16 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                 onClick={() => setSelectedTaskForDispatch(null)}
                 className="text-slate-400 hover:text-white"
               >
-                إلغاء
+                إغلاق
               </Button>
 
               <div className="flex items-center gap-2">
-                {dispatchModalTab === 'info' ? (
+                {selectedTaskForDispatch.stage.status === 'completed' ? (
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-3 py-1.5 rounded-xl">
+                    <Check className="w-3.5 h-3.5" />
+                    <span>مرحلة مكتملة ومعتمدة (غير قابلة للتكليف)</span>
+                  </div>
+                ) : dispatchModalTab === 'info' ? (
                   <Button
                     type="button"
                     variant="primary"

@@ -206,24 +206,14 @@ function MainApp() {
     }
   };
 
-  // 1. Render Login Screen if unauthenticated
-  if (!currentUser) {
-    return (
-      <LoginScreen
-        onLoginSubmit={handleLoginSubmit}
-        onLoginSuccess={(user_type, member) => {
-          setCurrentUser({ type: user_type, member });
-        }}
-      />
-    );
-  }
-
-  const isAdmin = currentUser.type === 'admin' || currentUser.type === 'super_admin';
-  const isManager = currentUser.type === 'manager';
-  const isHead = currentUser.type === 'head';
+  const isAdmin = currentUser?.type === 'admin' || currentUser?.type === 'super_admin';
+  const isManager = currentUser?.type === 'manager';
+  const isHead = currentUser?.type === 'head';
   const isManagement = isAdmin || isManager;
 
   const pendingReviewsCount = useMemo(() => {
+    if (!currentUser) return 0;
+
     if (isHead && currentUser.member) {
       const hId = currentUser.member.id;
       const deptIds = [currentUser.member.department_id, ...(currentUser.member.department_ids || [])].filter(Boolean);
@@ -276,6 +266,18 @@ function MainApp() {
 
     return 0;
   }, [clients, members, currentUser, isHead, isManagement]);
+
+  // 1. Render Login Screen if unauthenticated
+  if (!currentUser) {
+    return (
+      <LoginScreen
+        onLoginSubmit={handleLoginSubmit}
+        onLoginSuccess={(user_type, member) => {
+          setCurrentUser({ type: user_type, member });
+        }}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0b0f17] text-slate-100 font-sans pb-16 selection:bg-indigo-500 selection:text-white">

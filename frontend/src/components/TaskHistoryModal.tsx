@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   History, Clock, CheckCircle2, RotateCcw, Send, UserCheck, 
   ArrowRightLeft, AlertCircle, ExternalLink, User, Calendar, 
-  ShieldCheck, Loader2, X, FileText
+  ShieldCheck, Loader2, X, FileText, Copy, Check
 } from 'lucide-react';
 import type { TaskStage, AuditLog, Client } from '../types';
 import { fetchTaskHistory } from '../services/api';
@@ -22,6 +22,22 @@ export const TaskHistoryModal: React.FC<TaskHistoryModalProps> = ({
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const toSafeExternalUrl = (url?: string | null) => {
+    if (!url) return '#';
+    const trimmed = url.trim();
+    if (!trimmed) return '#';
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    return `https://${trimmed}`;
+  };
+
+  const handleCopy = (url: string) => {
+    if (!url) return;
+    navigator.clipboard.writeText(url);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -221,16 +237,36 @@ export const TaskHistoryModal: React.FC<TaskHistoryModalProps> = ({
               )}
 
               {stage.deliverable_url && (
-                <div className="flex items-center gap-2 pt-1">
-                  <a
-                    href={stage.deliverable_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-bold transition-colors"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    <span>فتح رابط التسليم المسجل ↗</span>
-                  </a>
+                <div className="p-2.5 rounded-xl bg-slate-900 border border-white/5 space-y-1.5">
+                  <div className="flex items-center justify-between gap-1 text-[11px] text-gray-300">
+                    <span className="font-bold flex items-center gap-1 text-indigo-300">
+                      <ExternalLink className="w-3 h-3" />
+                      <span>رابط التسليم المسجل:</span>
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(stage.deliverable_url || '')}
+                        className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-gray-300 hover:text-white text-[10px] font-bold flex items-center gap-1 border border-slate-700 cursor-pointer transition-colors"
+                        title="نسخ الرابط"
+                      >
+                        {copiedLink ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        <span>{copiedLink ? 'تم النسخ' : 'نسخ'}</span>
+                      </button>
+                      <a
+                        href={toSafeExternalUrl(stage.deliverable_url)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-2.5 py-0.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold flex items-center gap-1 transition-colors shadow-sm"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        <span>فتح ↗</span>
+                      </a>
+                    </div>
+                  </div>
+                  <div className="font-mono text-xs text-indigo-200 bg-slate-950 p-2 rounded-lg border border-slate-800 break-all select-all font-semibold" dir="ltr">
+                    {stage.deliverable_url}
+                  </div>
                 </div>
               )}
 

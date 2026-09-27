@@ -68,6 +68,14 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
     setTimeout(() => setCopiedSubmissionLink(false), 2000);
   };
 
+  const toSafeExternalUrl = (url?: string | null) => {
+    if (!url) return '#';
+    const trimmed = url.trim();
+    if (!trimmed) return '#';
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    return `https://${trimmed}`;
+  };
+
   const formatTimestamp = (ts?: string | null) => {
     if (!ts) return 'غير محدد';
     const date = new Date(ts);
@@ -848,25 +856,70 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                         </div>
                       )}
 
-                      {/* Deliverables */}
-                      <div className="space-y-1.5 pt-1 border-t border-slate-800">
-                        {stage.deliverable_url && (
-                          <a
-                            href={stage.deliverable_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1.5 text-xs text-indigo-400 hover:underline font-bold"
+                      {/* Deliverables Section */}
+                      {(stage.deliverable_url || stage.deliverable_note) && (
+                        <div className="space-y-2 pt-2 border-t border-slate-800 text-right">
+                          {stage.deliverable_url ? (
+                            <div className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-700/60 space-y-1.5">
+                              <div className="flex items-center justify-between gap-1 text-[11px] text-slate-300">
+                                <span className="font-bold flex items-center gap-1 text-indigo-300">
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                  <span>ملف المخرجات المسجل:</span>
+                                </span>
+                                <div className="flex items-center gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleCopySubmissionLink(stage.deliverable_url || '');
+                                    }}
+                                    className="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[11px] font-bold flex items-center gap-1 border border-slate-600 cursor-pointer transition-colors"
+                                    title="نسخ الرابط المكتوب"
+                                  >
+                                    {copiedSubmissionLink ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                                    <span>{copiedSubmissionLink ? 'تم النسخ' : 'نسخ'}</span>
+                                  </button>
+                                  <a
+                                    href={toSafeExternalUrl(stage.deliverable_url)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="px-2.5 py-0.5 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold flex items-center gap-1 transition-colors shadow-sm"
+                                    title="فتح الرابط في صفحة جديدة"
+                                  >
+                                    <ExternalLink className="w-3 h-3" />
+                                    <span>فتح ↗</span>
+                                  </a>
+                                </div>
+                              </div>
+                              <div className="font-mono text-xs text-indigo-200 bg-slate-950 p-2 rounded-lg border border-slate-800 break-all select-all font-semibold" dir="ltr">
+                                {stage.deliverable_url}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-[11px] text-amber-400/90 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5">
+                              <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                              <span>لم يتم إرفاق رابط خارجي مع هذا التسليم</span>
+                            </div>
+                          )}
+
+                          {stage.deliverable_note && (
+                            <div className="p-2 rounded-lg bg-slate-900/60 border border-slate-800 text-xs text-slate-300 italic">
+                              <span className="text-[10px] text-slate-400 block not-italic font-bold mb-0.5">شرح وملاحظات الموظف:</span>
+                              "{stage.deliverable_note}"
+                            </div>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => setSelectedSubmissionToView({ stage, client })}
+                            className="w-full py-1.5 px-2 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:text-white text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                           >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                            <span>معاينة ملف المخرجات ↗</span>
-                          </a>
-                        )}
-                        {stage.deliverable_note && (
-                          <p className="text-xs text-slate-300 bg-slate-800/40 p-2 rounded-lg border border-slate-700/50 italic">
-                            "{stage.deliverable_note}"
-                          </p>
-                        )}
-                      </div>
+                            <FileText className="w-3.5 h-3.5 text-indigo-400" />
+                            <span>معاينة التسليم والشرح في نافذة منبثقة ↗</span>
+                          </button>
+                        </div>
+                      )}
                     </CardBody>
 
                     <div className="p-3 bg-slate-950/40 border-t border-slate-800 flex items-center justify-between gap-2">
@@ -1151,9 +1204,9 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                       <span>{copiedSubmissionLink ? 'تم النسخ' : 'نسخ'}</span>
                     </button>
                     <a
-                      href={selectedSubmissionToView.stage.deliverable_url.startsWith('http') ? selectedSubmissionToView.stage.deliverable_url : `https://${selectedSubmissionToView.stage.deliverable_url}`}
+                      href={toSafeExternalUrl(selectedSubmissionToView.stage.deliverable_url)}
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                       className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
@@ -1183,9 +1236,31 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
             <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs space-y-1">
               <span className="text-slate-400 block">الشركة: <strong className="text-white">{selectedReviewStage.client.company_name}</strong></span>
               {selectedReviewStage.stage.deliverable_url && (
-                <span className="text-slate-400 block truncate">
-                  رابط المخرجات: <a href={selectedReviewStage.stage.deliverable_url} target="_blank" rel="noreferrer" className="text-indigo-400 underline">{selectedReviewStage.stage.deliverable_url}</a>
-                </span>
+                <div className="pt-1.5 flex items-center justify-between gap-2 border-t border-slate-800">
+                  <span className="text-slate-400">رابط المخرجات:</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-mono text-indigo-300 font-bold max-w-[200px] truncate" dir="ltr">
+                      {selectedReviewStage.stage.deliverable_url}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleCopySubmissionLink(selectedReviewStage.stage.deliverable_url || '')}
+                      className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-750 text-slate-300 text-[10px] font-bold flex items-center gap-1 border border-slate-700 cursor-pointer"
+                    >
+                      {copiedSubmissionLink ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                      <span>{copiedSubmissionLink ? 'تم النسخ' : 'نسخ'}</span>
+                    </button>
+                    <a
+                      href={toSafeExternalUrl(selectedReviewStage.stage.deliverable_url)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2.5 py-0.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold flex items-center gap-1"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      <span>فتح ↗</span>
+                    </a>
+                  </div>
+                </div>
               )}
             </div>
 

@@ -4,7 +4,7 @@ import {
   RotateCcw, ExternalLink, ShieldCheck, Users, Search,
   Check, UserCheck, Send, AlertTriangle,
   Layers, History, Edit, FileText,
-  Globe, Copy, Sparkles, Mail
+  Globe, Sparkles
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import type { Client, Department, TeamMember, TaskStage } from '../types';
@@ -66,7 +66,6 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
   const [dispatchInstructions, setDispatchInstructions] = useState('');
   const [isSubmittingDispatch, setIsSubmittingDispatch] = useState(false);
   const [dispatchSuccessMsg, setDispatchSuccessMsg] = useState<string | null>(null);
-  const [copiedField, setCopiedField] = useState<string | null>(null);
 
   // Review modal state
   const [selectedReviewStage, setSelectedReviewStage] = useState<{ client: Client; stage: TaskStage } | null>(null);
@@ -154,13 +153,6 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
   };
 
   const currentTabTasks = getTabFilteredTasks();
-
-  const handleCopyText = (text: string, fieldName: string) => {
-    if (!text) return;
-    navigator.clipboard.writeText(text);
-    setCopiedField(fieldName);
-    setTimeout(() => setCopiedField(null), 2000);
-  };
 
   // Open the unified dispatch modal
   const handleOpenDispatch = (client: Client, stage: TaskStage) => {
@@ -1186,71 +1178,51 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                               <div className="font-black text-white text-sm">
                                 {selectedTaskForDispatch.client.company_name}
                               </div>
-                              <div className="flex items-center gap-2">
-                                <StatusBadge status={selectedTaskForDispatch.stage.status} size="sm" />
-                                <PriorityBadge priority={selectedTaskForDispatch.client.priority} />
-                              </div>
+                              <StatusBadge status={selectedTaskForDispatch.stage.status} size="sm" />
                             </div>
                           </td>
                         </tr>
 
-                        {/* Row 2: المنصة والباقة */}
+                        {/* Row 2: الأولوية */}
+                        <tr className="hover:bg-slate-900/40 transition-colors">
+                          <td className="w-36 sm:w-44 p-3.5 bg-slate-900/80 text-slate-300 font-bold border-l border-slate-800/80 align-middle whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                              <span>مستوى الأولوية:</span>
+                            </div>
+                          </td>
+                          <td className="p-3.5 align-middle">
+                            <PriorityBadge priority={selectedTaskForDispatch.client.priority} />
+                          </td>
+                        </tr>
+
+                        {/* Row 3: المنصة */}
                         <tr className="hover:bg-slate-900/40 transition-colors">
                           <td className="w-36 sm:w-44 p-3.5 bg-slate-900/80 text-slate-300 font-bold border-l border-slate-800/80 align-middle whitespace-nowrap">
                             <div className="flex items-center gap-2">
                               <Layers className="w-4 h-4 text-teal-400 shrink-0" />
-                              <span>المنصة والباقة:</span>
+                              <span>المنصة:</span>
                             </div>
                           </td>
                           <td className="p-3.5 align-middle">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="px-2.5 py-1 rounded-lg bg-teal-500/15 border border-teal-500/30 text-teal-300 font-bold text-xs">
-                                {selectedTaskForDispatch.client.platform || 'زد'}
-                              </span>
-                              <span className="text-slate-600">·</span>
-                              <span className="text-slate-200 font-bold text-xs">
-                                {selectedTaskForDispatch.client.package_name || selectedTaskForDispatch.client.service_type || 'باقة متكاملة'}
-                              </span>
-                            </div>
+                            <span className="px-2.5 py-1 rounded-lg bg-teal-500/15 border border-teal-500/30 text-teal-300 font-bold text-xs inline-block">
+                              {selectedTaskForDispatch.client.platform || 'زد'}
+                            </span>
                           </td>
                         </tr>
 
-                        {/* Row 3: البريد المعتمد للوكالة */}
+                        {/* Row 4: الباقة */}
                         <tr className="hover:bg-slate-900/40 transition-colors">
                           <td className="w-36 sm:w-44 p-3.5 bg-slate-900/80 text-slate-300 font-bold border-l border-slate-800/80 align-middle whitespace-nowrap">
                             <div className="flex items-center gap-2">
-                              <Mail className="w-4 h-4 text-indigo-400 shrink-0" />
-                              <span>البريد المعتمد للوكالة:</span>
+                              <Award className="w-4 h-4 text-purple-400 shrink-0" />
+                              <span>الباقة / الخدمة:</span>
                             </div>
                           </td>
                           <td className="p-3.5 align-middle">
-                            {selectedTaskForDispatch.client.agency_email ? (
-                              <div className="flex items-center justify-between gap-3 bg-slate-900 border border-slate-800/90 rounded-xl px-3 py-1.5 max-w-sm">
-                                <span className="text-indigo-200 font-mono font-bold text-xs select-all" dir="ltr">
-                                  {selectedTaskForDispatch.client.agency_email}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => handleCopyText(selectedTaskForDispatch.client.agency_email || '', 'email')}
-                                  className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer shrink-0 flex items-center gap-1 text-[11px]"
-                                  title="نسخ الإيميل"
-                                >
-                                  {copiedField === 'email' ? (
-                                    <>
-                                      <Check className="w-3.5 h-3.5 text-emerald-400" />
-                                      <span className="text-emerald-400 font-bold text-[10px]">تم النسخ</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Copy className="w-3.5 h-3.5" />
-                                      <span className="text-[10px]">نسخ</span>
-                                    </>
-                                  )}
-                                </button>
-                              </div>
-                            ) : (
-                              <span className="text-slate-500 italic text-xs">غير مسجل</span>
-                            )}
+                            <span className="text-slate-200 font-bold text-xs">
+                              {selectedTaskForDispatch.client.package_name || selectedTaskForDispatch.client.service_type || 'باقة متكاملة'}
+                            </span>
                           </td>
                         </tr>
 

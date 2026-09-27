@@ -3,7 +3,7 @@ import confetti from 'canvas-confetti';
 import { 
   CheckCircle2, Clock, FolderGit2, Send, Building2,
   AlertTriangle, RotateCcw, ExternalLink, ShieldCheck, History, FileText,
-  Globe, Copy, Check
+  Globe
 } from 'lucide-react';
 import type { Client, TeamMember, TaskStage } from '../types';
 import { Button } from './ui/Button';
@@ -38,14 +38,6 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
   const [deliverableNote, setDeliverableNote] = useState('');
   const [deliverableUrl, setDeliverableUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [copiedField, setCopiedField] = useState<string | null>(null);
-
-  const handleCopyText = (text: string, fieldName: string) => {
-    if (!text) return;
-    navigator.clipboard.writeText(text);
-    setCopiedField(fieldName);
-    setTimeout(() => setCopiedField(null), 2000);
-  };
 
   // Filter tasks assigned ONLY to this logged in employee
   const memberTasks: { client: Client; stage: TaskStage }[] = [];
@@ -696,22 +688,8 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
                   </div>
 
                   <div className="flex items-center justify-between py-1 border-b border-slate-850">
-                    <span className="text-slate-400 text-xs">إيميل الوكالة:</span>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-indigo-300 font-mono text-[11px] select-all max-w-[140px] truncate">
-                        {selectedTaskForDetails.client.agency_email || 'غير مسجل'}
-                      </span>
-                      {selectedTaskForDetails.client.agency_email && (
-                        <button
-                          type="button"
-                          onClick={() => handleCopyText(selectedTaskForDetails.client.agency_email || '', 'email')}
-                          className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer"
-                          title="نسخ الإيميل"
-                        >
-                          {copiedField === 'email' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                        </button>
-                      )}
-                    </div>
+                    <span className="text-slate-400 text-xs">مستوى الأولوية:</span>
+                    <PriorityBadge priority={selectedTaskForDetails.client.priority} />
                   </div>
 
 

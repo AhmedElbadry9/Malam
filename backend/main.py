@@ -139,13 +139,18 @@ app.include_router(tasks_router)
 app.include_router(stats_router)
 
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def root():
     return {
         "status": "online",
         "system": "Agency Operations Platform API v2.0",
         "docs_url": "/docs"
     }
+
+
+@app.api_route("/health", methods=["GET", "HEAD"])
+def health():
+    return {"status": "ok"}
 
 
 if __name__ == "__main__":

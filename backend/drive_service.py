@@ -8,8 +8,8 @@ from googleapiclient.discovery import build
 SCOPES = ['https://www.googleapis.com/auth/drive']
 SERVICE_ACCOUNT_FILE = os.path.join(os.path.dirname(__file__), 'credentials.json')
 
-# The ID of the main "Malam Clients" folder provided by the user
-MAIN_FOLDER_ID = '1dhuayx660p7NyCnxeAXTQ0tPZUfuy8j8'
+# The ID of the main "Malam Clients" folder
+MAIN_FOLDER_ID = os.environ.get('GOOGLE_DRIVE_MAIN_FOLDER_ID') or '1dhuayx660p7NyCnxeAXTQ0tPZUfuy8j8'
 MASTER_TEMPLATE_SHEET_ID = os.environ.get('GOOGLE_SHEET_TEMPLATE_ID') or '1ovyYQ1VcWBS9LhUg9IuAucHwE9qCGjPOOIKYsW25pZI'
 DEFAULT_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw6rpEZCNIe1bel7SiBRdS0auLVOP5K36oEh2su-ypwEEJpIui_0PJ96Bi4eRZZy5-7/exec'
 

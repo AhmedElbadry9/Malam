@@ -322,7 +322,6 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
                           <Building2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
                           <span className="truncate">{client.company_name}</span>
                         </h3>
-                        <p className="text-[11px] text-slate-400">{client.name}</p>
                       </div>
                       <StatusBadge status={stage.status} size="sm" />
                     </div>
@@ -601,8 +600,6 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
                 <p className="text-xs text-slate-400 flex items-center gap-2">
                   <Building2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
                   <span className="text-slate-200 font-bold">{selectedTaskForDetails.client.company_name}</span>
-                  <span className="text-slate-600">•</span>
-                  <span>العميل: {selectedTaskForDetails.client.name}</span>
                 </p>
               </div>
 

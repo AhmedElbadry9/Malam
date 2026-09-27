@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Navbar } from './components/Navbar';
 import { AdminDashboard } from './components/AdminDashboard';
 import { HeadWorkspace } from './components/HeadWorkspace';
@@ -222,9 +222,57 @@ function MainApp() {
   const isHead = currentUser.type === 'head';
   const isManagement = isAdmin || isManager;
 
-  const pendingReviewsCount = clients.reduce((acc, client) => {
-    return acc + (client.stages?.filter(s => s.status === 'under_review').length || 0);
-  }, 0);
+  const pendingReviewsCount = useMemo(() => {
+    if (isHead && currentUser.member) {
+      const hId = currentUser.member.id;
+      const deptIds = [currentUser.member.department_id, ...(currentUser.member.department_ids || [])].filter(Boolean);
+      let count = 0;
+      clients.forEach(c => {
+        c.stages?.forEach(s => {
+          if (s.status === 'under_review') {
+            const inDept = deptIds.length === 0 || deptIds.includes(s.department_id);
+            const isAssignedToHead = s.assigned_member_id === hId;
+            const assigner = s.assigned_by || members.find(m => m.id === s.assigned_by_id);
+            const isAssignedByManagement = assigner && (assigner.role_type === 'admin' || assigner.role_type === 'manager' || assigner.role_type === 'super_admin');
+            const isDirectManagement = isAssignedByManagement && s.assigned_by_id !== hId;
+            
+            if (inDept && !isAssignedToHead && !isDirectManagement) {
+              count++;
+            }
+          }
+        });
+      });
+      return count;
+    }
+
+    if (isManagement) {
+      let count = 0;
+      clients.forEach(c => {
+        c.stages?.forEach(s => {
+          if (s.status === 'under_review') {
+            const assigner = s.assigned_by || members.find(m => m.id === s.assigned_by_id);
+            const isAssignedByHead = assigner && (
+              assigner.role_type === 'head' || 
+              assigner.role?.toLowerCase().includes('head') || 
+              assigner.role?.includes('رئيس')
+            );
+            const deptHead = members.find(m => 
+              (m.role_type === 'head' || m.role?.toLowerCase().includes('head') || m.role?.includes('رئيس')) &&
+              (m.department_id === s.department_id || (m.department_ids && m.department_ids.includes(s.department_id)))
+            );
+            const isSubmittedByHead = deptHead && s.assigned_member_id === deptHead.id;
+            
+            if (!isAssignedByHead || isSubmittedByHead || !deptHead) {
+              count++;
+            }
+          }
+        });
+      });
+      return count;
+    }
+
+    return 0;
+  }, [clients, members, currentUser, isHead, isManagement]);
 
   return (
     <div className="min-h-screen bg-[#0b0f17] text-slate-100 font-sans pb-16 selection:bg-indigo-500 selection:text-white">

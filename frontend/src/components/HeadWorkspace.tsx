@@ -22,7 +22,7 @@ interface HeadWorkspaceProps {
   clients: Client[];
   departments: Department[];
   members: TeamMember[];
-  onUpdateAssignment: (clientId: number, stageId: number, data: { assigned_member_id?: number | null; status?: string; description?: string; head_instructions?: string }) => Promise<void>;
+  onUpdateAssignment: (clientId: number, stageId: number, data: { assigned_member_id?: number | null; status?: string; description?: string; head_instructions?: string; assigned_by_id?: number | null }) => Promise<void>;
   onReviewTaskStage: (stageId: number, action: 'approve' | 'request_revision', feedbackNotes?: string) => Promise<void>;
   onSubmitForReview?: (stageId: number, note?: string, url?: string) => Promise<void>;
   onOpenDriveModal: (client: Client) => void;
@@ -118,7 +118,7 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
     const assigner = stage.assigned_by || members.find(m => m.id === stage.assigned_by_id);
     const isAssignedByManagement = assigner && (assigner.role_type === 'admin' || assigner.role_type === 'manager' || assigner.role_type === 'super_admin');
     
-    return !isAssignedByManagement;
+    return !!isAssignedByManagement;
   };
 
   const reviewTasks = deptTasks.filter(item => 
@@ -192,7 +192,8 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
         {
           assigned_member_id: newMemberId,
           head_instructions: dispatchInstructions.trim() || undefined,
-          status: targetStatus
+          status: targetStatus,
+          assigned_by_id: currentMember.id
         }
       );
 
@@ -202,6 +203,8 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
         stage: {
           ...prev.stage,
           assigned_member_id: newMemberId,
+          assigned_by_id: currentMember.id,
+          assigned_by: currentMember,
           head_instructions: dispatchInstructions.trim() || undefined,
           status: (targetStatus as any) || prev.stage.status
         }

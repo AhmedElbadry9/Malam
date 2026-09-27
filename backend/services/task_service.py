@@ -206,7 +206,9 @@ def update_task_stage(db: Session, client_id: int, stage_id: int, stage_in: sche
     for key, value in update_data.items():
         setattr(stage, key, value)
 
-    if reassigned and current_user:
+    if "assigned_by_id" in update_data and update_data["assigned_by_id"] is not None:
+        stage.assigned_by_id = update_data["assigned_by_id"]
+    elif reassigned and current_user:
         stage.assigned_by_id = current_user.id
 
     # Recalculate client overall progress if status was updated

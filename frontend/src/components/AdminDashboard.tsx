@@ -145,9 +145,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       c.stages?.forEach(s => {
         if (s.status === 'under_review') {
           const assigner = s.assigned_by || members.find(m => m.id === s.assigned_by_id);
-          const isAssignedByManagement = assigner 
-            ? (assigner.role_type === 'admin' || assigner.role_type === 'manager' || assigner.role_type === 'super_admin') 
-            : false;
+          const isAssignedByHead = assigner && (
+            assigner.role_type === 'head' || 
+            assigner.role?.toLowerCase().includes('head') || 
+            assigner.role?.includes('رئيس')
+          );
           
           const deptHead = members.find(m => 
             (m.role_type === 'head' || m.role?.toLowerCase().includes('head') || m.role?.includes('رئيس')) &&
@@ -155,13 +157,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           );
           
           const isSubmittedByHead = deptHead && s.assigned_member_id === deptHead.id;
-          const hasNoDeptHead = !deptHead;
-          const isDirectManagement = isAssignedByManagement && (!deptHead || s.assigned_by_id !== deptHead.id);
 
-          // If no dept head, or submitted by head, or assigned directly by management -> goes to Admin/Manager!
-          if (hasNoDeptHead || isSubmittedByHead || isDirectManagement || !s.assigned_by_id) {
-            list.push({ client: c, stage: s });
+          // If a task was delegated/assigned by a Head to a team employee in their department:
+          // It MUST go to the Head, NOT to Admin/Management!
+          if (isAssignedByHead && !isSubmittedByHead && deptHead) {
+            return;
           }
+
+          list.push({ client: c, stage: s });
         }
       });
     });

@@ -3,7 +3,7 @@ import confetti from 'canvas-confetti';
 import { 
   CheckCircle2, Clock, FolderGit2, Send, Building2,
   AlertTriangle, RotateCcw, ExternalLink, ShieldCheck, History, FileText,
-  Globe
+  Globe, Copy, Check
 } from 'lucide-react';
 import type { Client, TeamMember, TaskStage } from '../types';
 import { Button } from './ui/Button';
@@ -35,9 +35,18 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
   const [activeTab, setActiveTab] = useState<'todo' | 'revisions' | 'review' | 'done'>('todo');
   const [selectedStageToSubmit, setSelectedStageToSubmit] = useState<{ client: Client; stage: TaskStage } | null>(null);
   const [selectedTaskForDetails, setSelectedTaskForDetails] = useState<{ client: Client; stage: TaskStage } | null>(null);
+  const [selectedSubmissionToView, setSelectedSubmissionToView] = useState<{ client: Client; stage: TaskStage } | null>(null);
+  const [copiedSubmissionLink, setCopiedSubmissionLink] = useState(false);
   const [deliverableNote, setDeliverableNote] = useState('');
   const [deliverableUrl, setDeliverableUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  const handleCopySubmissionLink = (url: string) => {
+    if (!url) return;
+    navigator.clipboard.writeText(url);
+    setCopiedSubmissionLink(true);
+    setTimeout(() => setCopiedSubmissionLink(false), 2000);
+  };
 
   // Filter tasks assigned ONLY to this logged in employee
   const memberTasks: { client: Client; stage: TaskStage }[] = [];
@@ -434,22 +443,21 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
                     </div>
 
                     <div className="flex items-center justify-between gap-2 pt-1">
-                      {stage.deliverable_url ? (
-                        <a
-                          href={stage.deliverable_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1.5 text-xs text-indigo-400 hover:underline"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                          <span>رابط التسليم المسجل ↗</span>
-                        </a>
-                      ) : <span />}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedSubmissionToView({ client, stage })}
+                        className="inline-flex items-center gap-1.5 text-xs text-indigo-300 hover:text-white font-bold transition-all cursor-pointer bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 px-3 py-1.5 rounded-xl shadow-sm"
+                        title="معاينة ما تم تسليمه والشرح المسجل"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-indigo-400" />
+                        <span>رابط التسليم والشرح</span>
+                      </button>
 
                       {onOpenHistoryModal && (
                         <button
+                          type="button"
                           onClick={() => onOpenHistoryModal(stage, client)}
-                          className="inline-flex items-center gap-1 text-[11px] text-slate-400 hover:text-white transition-colors"
+                          className="inline-flex items-center gap-1 text-[11px] text-slate-400 hover:text-white transition-colors cursor-pointer"
                         >
                           <History className="w-3.5 h-3.5 text-indigo-400" />
                           <span>سجل الدورة</span>
@@ -496,13 +504,27 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
                     </div>
 
                     <div className="flex items-center justify-between gap-2 pt-1">
-                      <p className="text-[10px] text-slate-400">
-                        تم الاعتماد: {formatTimestamp(stage.completion_timestamp || stage.reviewed_at)}
-                      </p>
+                      {(stage.deliverable_url || stage.deliverable_note) ? (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedSubmissionToView({ client, stage })}
+                          className="inline-flex items-center gap-1.5 text-xs text-indigo-300 hover:text-white font-bold transition-all cursor-pointer bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 px-2.5 py-1 rounded-xl shadow-sm"
+                          title="معاينة ما تم تسليمه والشرح المسجل"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-indigo-400" />
+                          <span>مخرجات التسليم والشرح</span>
+                        </button>
+                      ) : (
+                        <p className="text-[10px] text-slate-400">
+                          تم الاعتماد: {formatTimestamp(stage.completion_timestamp || stage.reviewed_at)}
+                        </p>
+                      )}
+
                       {onOpenHistoryModal && (
                         <button
+                          type="button"
                           onClick={() => onOpenHistoryModal(stage, client)}
-                          className="inline-flex items-center gap-1 text-[11px] text-slate-400 hover:text-white transition-colors"
+                          className="inline-flex items-center gap-1 text-[11px] text-slate-400 hover:text-white transition-colors cursor-pointer"
                         >
                           <History className="w-3.5 h-3.5 text-indigo-400" />
                           <span>سجل الدورة</span>
@@ -570,6 +592,93 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
               placeholder="مثال: تم الانتهاء من جميع تصاميم البنرات بدقة عالية ورفع النسخ المصدرية في المجلد رقم 02..."
             />
           </form>
+        </Modal>
+      )}
+
+      {/* Modal: View Deliverables & Submission Explanation */}
+      {selectedSubmissionToView && (
+        <Modal
+          isOpen={true}
+          onClose={() => setSelectedSubmissionToView(null)}
+          title="تفاصيل ومخرجات التسليم"
+          description={`${selectedSubmissionToView.client.company_name} — ${selectedSubmissionToView.stage.stage_name}`}
+          icon={<FileText className="w-5 h-5 text-indigo-400" />}
+          maxWidth="lg"
+          footer={
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setSelectedSubmissionToView(null)}
+            >
+              إغلاق
+            </Button>
+          }
+        >
+          <div className="space-y-4 text-right">
+            
+            {/* Stage Status Strip */}
+            <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between gap-3 text-xs">
+              <span className="text-slate-400 font-medium">حالة المهمة الحالية:</span>
+              <StatusBadge status={selectedSubmissionToView.stage.status} size="sm" />
+            </div>
+
+            {/* Explanation & Notes Box */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5 text-amber-400" />
+                <span>الشرح وتفاصيل ما تم إنجازه (ملاحظات التسليم):</span>
+              </label>
+              {selectedSubmissionToView.stage.deliverable_note ? (
+                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 leading-relaxed whitespace-pre-wrap font-medium">
+                  {selectedSubmissionToView.stage.deliverable_note}
+                </div>
+              ) : (
+                <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/60 text-xs text-slate-500 italic">
+                  لم يتم كتابة شرح نصي مع هذا التسليم.
+                </div>
+              )}
+            </div>
+
+            {/* Link Box */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                <ExternalLink className="w-3.5 h-3.5 text-indigo-400" />
+                <span>رابط ملف العمل أو المخرجات المسجل:</span>
+              </label>
+              {selectedSubmissionToView.stage.deliverable_url ? (
+                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <span className="font-mono text-xs text-indigo-300 font-bold select-all break-all" dir="ltr">
+                    {selectedSubmissionToView.stage.deliverable_url}
+                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleCopySubmissionLink(selectedSubmissionToView.stage.deliverable_url || '')}
+                      className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer border border-slate-700"
+                      title="نسخ الرابط"
+                    >
+                      {copiedSubmissionLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copiedSubmissionLink ? 'تم النسخ' : 'نسخ'}</span>
+                    </button>
+                    <a
+                      href={selectedSubmissionToView.stage.deliverable_url.startsWith('http') ? selectedSubmissionToView.stage.deliverable_url : `https://${selectedSubmissionToView.stage.deliverable_url}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>فتح الرابط ↗</span>
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/60 text-xs text-slate-500 italic">
+                  لم يتم إرفاق رابط خارجي مع هذا التسليم.
+                </div>
+              )}
+            </div>
+
+          </div>
         </Modal>
       )}
 

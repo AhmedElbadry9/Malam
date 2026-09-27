@@ -44,6 +44,8 @@ htmlcov/
 
 # Databases
 *.db
+*.db-shm
+*.db-wal
 *.sqlite
 *.sqlite3
 backend/malam_agency.db

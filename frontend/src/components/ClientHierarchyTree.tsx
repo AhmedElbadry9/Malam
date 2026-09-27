@@ -26,6 +26,7 @@ interface ClientHierarchyTreeProps {
   onClearSearch?: () => void;
   filterCategory?: FilterCategory;
   expandSignal?: number;
+  clients?: Client[];
 }
 
 type FilterCategory = 'all' | 'in_progress' | 'completed' | 'urgent';
@@ -44,7 +45,8 @@ export const ClientHierarchyTree: React.FC<ClientHierarchyTreeProps> = ({
   searchTerm: externalSearchTerm = '',
   onClearSearch,
   filterCategory: externalFilterCategory = 'all',
-  expandSignal
+  expandSignal,
+  clients
 }) => {
   const [hierarchyData, setHierarchyData] = useState<ClientGroupHierarchy[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,16 +80,17 @@ export const ClientHierarchyTree: React.FC<ClientHierarchyTreeProps> = ({
       setLoading(true);
       setError(null);
       const data = await fetchClientsHierarchy(query);
-      setHierarchyData(data);
+      const safeData = Array.isArray(data) ? data : [];
+      setHierarchyData(safeData);
       
       // Auto-expand first 5 clients for seamless view
       const initialExpClients: Record<string, boolean> = {};
       const initialExpComps: Record<number, boolean> = {};
-      data.forEach((group, idx) => {
-        if (idx < 5) {
+      safeData.forEach((group, idx) => {
+        if (idx < 5 && group?.client_name) {
           initialExpClients[group.client_name] = true;
-          group.companies.forEach(c => {
-            initialExpComps[c.id] = true;
+          (group.companies || []).forEach(c => {
+            if (c?.id) initialExpComps[c.id] = true;
           });
         }
       });
@@ -107,6 +110,13 @@ export const ClientHierarchyTree: React.FC<ClientHierarchyTreeProps> = ({
     return () => clearTimeout(timer);
   }, [currentSearchTerm]);
 
+  // Sync tree hierarchy whenever external clients list updates (e.g. after CRUD actions)
+  useEffect(() => {
+    if (clients) {
+      loadData(currentSearchTerm);
+    }
+  }, [clients]);
+
   useEffect(() => {
     if (expandSignal && expandSignal > 0) {
       expandAll();
@@ -124,11 +134,12 @@ export const ClientHierarchyTree: React.FC<ClientHierarchyTreeProps> = ({
 
   // Filtered Clients based on currentFilterCategory
   const filteredHierarchy = useMemo(() => {
+    if (!Array.isArray(hierarchyData)) return [];
     if (currentFilterCategory === 'all') return hierarchyData;
 
     return hierarchyData
       .map(group => {
-        const matchingCompanies = group.companies.filter(c => {
+        const matchingCompanies = (group.companies || []).filter(c => {
           if (currentFilterCategory === 'in_progress') return c.status !== 'completed';
           if (currentFilterCategory === 'completed') return c.status === 'completed';
           if (currentFilterCategory === 'urgent') return c.priority === 'urgent';
@@ -164,11 +175,13 @@ export const ClientHierarchyTree: React.FC<ClientHierarchyTreeProps> = ({
   const expandAll = () => {
     const expClients: Record<string, boolean> = {};
     const expComps: Record<number, boolean> = {};
-    filteredHierarchy.forEach(group => {
-      expClients[group.client_name] = true;
-      group.companies.forEach(c => {
-        expComps[c.id] = true;
-      });
+    (filteredHierarchy || []).forEach(group => {
+      if (group?.client_name) {
+        expClients[group.client_name] = true;
+        (group.companies || []).forEach(c => {
+          if (c?.id) expComps[c.id] = true;
+        });
+      }
     });
     setExpandedClients(expClients);
     setExpandedCompanies(expComps);
@@ -431,7 +444,7 @@ export const ClientHierarchyTree: React.FC<ClientHierarchyTreeProps> = ({
               {/* LEVEL 2 & 3: COMPANIES & TASKS (EXPANDABLE TREE) */}
               {isClientExpanded && (
                 <div className="p-4 sm:p-6 space-y-5 bg-black/40">
-                  {clientGroup.companies.map((company) => {
+                  {(clientGroup.companies || []).map((company) => {
                     const isCompanyExpanded = !!expandedCompanies[company.id];
 
                     return (
@@ -655,7 +668,7 @@ export const ClientHierarchyTree: React.FC<ClientHierarchyTreeProps> = ({
                                 </div>
                               ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
-                                  {company.stages.map((stage, sIdx) => {
+                                  {(company.stages || []).map((stage, sIdx) => {
                                     const dept = stage.department || departments.find(d => d.id === stage.department_id);
                                     const member = stage.assigned_member || members.find(m => m.id === stage.assigned_member_id);
 

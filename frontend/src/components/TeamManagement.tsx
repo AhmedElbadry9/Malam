@@ -139,9 +139,10 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
   });
 
   const filteredMembers = visibleMembers.filter(m => {
-    const matchesSearch = m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          m.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          m.role.toLowerCase().includes(searchTerm.toLowerCase());
+    const term = searchTerm.toLowerCase();
+    const matchesSearch = (m.name || '').toLowerCase().includes(term) ||
+                          (m.username || '').toLowerCase().includes(term) ||
+                          (m.role || '').toLowerCase().includes(term);
     const matchesDept = selectedDeptFilter === 'all' || 
                         m.department_id === selectedDeptFilter || 
                         (m.department_ids && m.department_ids.includes(selectedDeptFilter as number));
@@ -490,9 +491,9 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
                           <span>كامل أقسام الوكالة ({member.departments.length} أقسام)</span>
                         </span>
                       ) : member.departments && member.departments.length > 0 ? (
-                        member.departments.map(d => (
+                        member.departments.filter(Boolean).map(d => (
                           <span key={d.id} className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-indigo-300 font-bold border border-white/5">
-                            {d.name_ar}
+                            {d.name_ar || ''}
                           </span>
                         ))
                       ) : (

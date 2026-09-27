@@ -145,16 +145,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       c.stages?.forEach(s => {
         if (s.status === 'under_review') {
           const assigner = s.assigned_by || members.find(m => m.id === s.assigned_by_id);
+          const assignerRole = assigner?.role || '';
           const isAssignedByHead = assigner && (
             assigner.role_type === 'head' || 
-            assigner.role?.toLowerCase().includes('head') || 
-            assigner.role?.includes('رئيس')
+            assignerRole.toLowerCase().includes('head') || 
+            assignerRole.includes('رئيس')
           );
           
-          const deptHead = members.find(m => 
-            (m.role_type === 'head' || m.role?.toLowerCase().includes('head') || m.role?.includes('رئيس')) &&
-            (m.department_id === s.department_id || (m.department_ids && m.department_ids.includes(s.department_id)))
-          );
+          const deptHead = members.find(m => {
+            const mRole = m.role || '';
+            return (m.role_type === 'head' || mRole.toLowerCase().includes('head') || mRole.includes('رئيس')) &&
+              (m.department_id === s.department_id || (m.department_ids && m.department_ids.includes(s.department_id)));
+          });
           
           const isSubmittedByHead = deptHead && s.assigned_member_id === deptHead.id;
 
@@ -205,9 +207,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   const filteredClients = clients.filter(c => {
-    const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          c.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          c.service_type.toLowerCase().includes(searchTerm.toLowerCase());
+    const term = searchTerm.toLowerCase();
+    const matchesSearch = (c.name || '').toLowerCase().includes(term) ||
+                          (c.company_name || '').toLowerCase().includes(term) ||
+                          (c.service_type || '').toLowerCase().includes(term);
     const matchesStatus = statusFilter === 'all' || 
                           (statusFilter === 'urgent' ? c.priority === 'urgent' : c.status === statusFilter);
     return matchesSearch && matchesStatus;
@@ -220,7 +223,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const avgHours = kpis?.avg_completion_hours ?? 0;
 
   const uniqueClientsCount = useMemo(() => {
-    return new Set(clients.map(c => c.name.trim().toLowerCase())).size;
+    return new Set(clients.map(c => (c.name || '').trim().toLowerCase()).filter(Boolean)).size;
   }, [clients]);
 
   const departmentWorkloads = useMemo(() => {
@@ -796,6 +799,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           onClearSearch={() => setSearchTerm('')}
           filterCategory={statusFilter as any}
           expandSignal={expandSignal}
+          clients={clients}
         />
       ) : (
         /* Alternative Table View */

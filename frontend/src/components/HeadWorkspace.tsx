@@ -145,9 +145,9 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase();
       return list.filter(item => (
-        item.client.name.toLowerCase().includes(q) ||
-        item.client.company_name.toLowerCase().includes(q) ||
-        item.stage.stage_name.toLowerCase().includes(q)
+        (item.client?.name || '').toLowerCase().includes(q) ||
+        (item.client?.company_name || '').toLowerCase().includes(q) ||
+        (item.stage?.stage_name || '').toLowerCase().includes(q)
       ));
     }
     return list;

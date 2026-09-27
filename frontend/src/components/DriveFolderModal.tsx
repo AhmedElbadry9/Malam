@@ -640,7 +640,7 @@ export const DriveFolderModal: React.FC<DriveFolderModalProps> = ({
                     setShareRole('writer');
                   }
                 }}
-                value={teamMemberList.some(m => m.email?.toLowerCase() === shareEmail.trim().toLowerCase()) ? shareEmail.trim() : ''}
+                value={teamMemberList.some(m => (m.email || '').toLowerCase() === shareEmail.trim().toLowerCase()) ? shareEmail.trim() : ''}
                 className="w-full bg-gray-900 border border-indigo-500/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-medium cursor-pointer"
               >
                 <option value="">-- اختر موظفاً من قائمة الكوادر أو أدخل الإيميل يدوياً بالأسفل --</option>

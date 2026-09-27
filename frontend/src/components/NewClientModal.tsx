@@ -96,7 +96,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
   const filteredClientSuggestions = useMemo(() => {
     const q = name.trim().toLowerCase();
     if (!q) return [];
-    return clientSuggestions.filter(c => c.name.toLowerCase().includes(q));
+    return clientSuggestions.filter(c => (c.name || '').toLowerCase().includes(q));
   }, [clientSuggestions, name]);
 
   // Duplicate Store Name detection on Drive & System
@@ -1138,7 +1138,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
                           onChange={(e) => {
                             const val = e.target.value;
                             if (val) {
-                              if (!clientUploadsShares.some(s => s.email.toLowerCase() === val.toLowerCase())) {
+                              if (!clientUploadsShares.some(s => (s.email || '').toLowerCase() === val.toLowerCase())) {
                                 setClientUploadsShares(prev => [...prev, { id: Math.random().toString(36).substring(2, 9), email: val, role: 'writer' }]);
                               }
                               e.target.value = '';
@@ -1155,7 +1155,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
                       </div>
 
                       {clientUploadsShares.map((share) => {
-                        const matchedMember = members.find(m => m.email?.toLowerCase() === share.email.toLowerCase());
+                        const matchedMember = members.find(m => (m.email || '').toLowerCase() === (share.email || '').toLowerCase());
 
                         return (
                           <div key={share.id} className="p-2 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1.5">
@@ -1257,7 +1257,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
                           onChange={(e) => {
                             const val = e.target.value;
                             if (val) {
-                              if (!teamDeliverablesShares.some(s => s.email.toLowerCase() === val.toLowerCase())) {
+                              if (!teamDeliverablesShares.some(s => (s.email || '').toLowerCase() === val.toLowerCase())) {
                                 setTeamDeliverablesShares(prev => [...prev, { id: Math.random().toString(36).substring(2, 9), email: val, role: 'writer' }]);
                               }
                               e.target.value = '';
@@ -1274,7 +1274,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
                       </div>
 
                       {teamDeliverablesShares.map((share) => {
-                        const matchedMember = members.find(m => m.email?.toLowerCase() === share.email.toLowerCase());
+                        const matchedMember = members.find(m => (m.email || '').toLowerCase() === (share.email || '').toLowerCase());
 
                         return (
                           <div key={share.id} className="p-2 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1.5">
@@ -1404,10 +1404,11 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
 
                       {(() => {
                         const deptId = Number(group.department_id);
-                        const curDeptHead = members.find(m => 
-                          (m.department_id === deptId || m.department_ids?.includes(deptId)) && 
-                          (m.role_type === 'head' || m.role?.toLowerCase().includes('head') || m.role?.includes('رئيس'))
-                        );
+                        const curDeptHead = members.find(m => {
+                          const mRole = m.role || '';
+                          return (m.department_id === deptId || m.department_ids?.includes(deptId)) && 
+                            (m.role_type === 'head' || mRole.toLowerCase().includes('head') || mRole.includes('رئيس'));
+                        });
                         // Actual specialist employees belonging to this department
                         const deptEmployees = members.filter(m => 
                           m.role_type === 'employee' &&

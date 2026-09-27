@@ -126,13 +126,16 @@ export const DepartmentDetailsModal: React.FC<DepartmentDetailsModalProps> = ({
 
   // Categorize members
   const { heads, specialists, generalAdmins } = useMemo(() => {
-    const h = deptMembers.filter(m => 
-      m.role_type === 'head' || 
-      m.role?.includes('رئيس') || 
-      m.role?.includes('مدير القسم') || 
-      m.role?.toLowerCase().includes('head') ||
-      m.role?.toLowerCase().includes('lead')
-    );
+    const h = deptMembers.filter(m => {
+      const r = m.role || '';
+      return (
+        m.role_type === 'head' || 
+        r.includes('رئيس') || 
+        r.includes('مدير القسم') || 
+        r.toLowerCase().includes('head') ||
+        r.toLowerCase().includes('lead')
+      );
+    });
     const s = deptMembers.filter(m => 
       !h.some(item => item.id === m.id) && 
       m.role_type !== 'super_admin' && 
@@ -168,12 +171,13 @@ export const DepartmentDetailsModal: React.FC<DepartmentDetailsModalProps> = ({
   // Filtered active tasks
   const filteredActiveTasks = useMemo(() => {
     return activeTasks.filter(item => {
+      const q = taskSearchQuery.toLowerCase();
       const matchesSearch = 
         !taskSearchQuery ||
-        item.client.company_name?.toLowerCase().includes(taskSearchQuery.toLowerCase()) ||
-        item.task.stage_name?.toLowerCase().includes(taskSearchQuery.toLowerCase()) ||
-        item.task.description?.toLowerCase().includes(taskSearchQuery.toLowerCase()) ||
-        item.task.assigned_member?.name?.toLowerCase().includes(taskSearchQuery.toLowerCase());
+        (item.client?.company_name || '').toLowerCase().includes(q) ||
+        (item.task?.stage_name || '').toLowerCase().includes(q) ||
+        (item.task?.description || '').toLowerCase().includes(q) ||
+        (item.task?.assigned_member?.name || '').toLowerCase().includes(q);
 
       const matchesStatus = 
         statusFilter === 'all' || 

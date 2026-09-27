@@ -11,6 +11,7 @@ import { DriveFolderModal } from './components/DriveFolderModal';
 import { ClientBriefSheetModal } from './components/ClientBriefSheetModal';
 import { TaskHistoryModal } from './components/TaskHistoryModal';
 import { ToastProvider } from './context/ToastContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { 
   fetchClients, fetchDepartments, fetchMembers, fetchSystemKPIs, 
   createClientIntake, updateClient, deleteClient, addClientAssignment, updateClientAssignment, deleteClientAssignment,
@@ -251,15 +252,17 @@ function MainApp() {
         c.stages?.forEach(s => {
           if (s.status === 'under_review') {
             const assigner = s.assigned_by || members.find(m => m.id === s.assigned_by_id);
+            const assignerRole = assigner?.role || '';
             const isAssignedByHead = assigner && (
               assigner.role_type === 'head' || 
-              assigner.role?.toLowerCase().includes('head') || 
-              assigner.role?.includes('رئيس')
+              assignerRole.toLowerCase().includes('head') || 
+              assignerRole.includes('رئيس')
             );
-            const deptHead = members.find(m => 
-              (m.role_type === 'head' || m.role?.toLowerCase().includes('head') || m.role?.includes('رئيس')) &&
-              (m.department_id === s.department_id || (m.department_ids && m.department_ids.includes(s.department_id)))
-            );
+            const deptHead = members.find(m => {
+              const mRole = m.role || '';
+              return (m.role_type === 'head' || mRole.toLowerCase().includes('head') || mRole.includes('رئيس')) &&
+                (m.department_id === s.department_id || (m.department_ids && m.department_ids.includes(s.department_id)));
+            });
             const isSubmittedByHead = deptHead && s.assigned_member_id === deptHead.id;
             
             if (!isAssignedByHead || isSubmittedByHead || !deptHead) {
@@ -446,9 +449,11 @@ function MainApp() {
 
 export function App() {
   return (
-    <ToastProvider>
-      <MainApp />
-    </ToastProvider>
+    <ErrorBoundary>
+      <ToastProvider>
+        <MainApp />
+      </ToastProvider>
+    </ErrorBoundary>
   );
 }
 

@@ -543,10 +543,11 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
                     <label className="block text-gray-400 mb-1 font-bold">2. المكلف بالمهمة (الـ Head أو موظف):</label>
                     {(() => {
                       const selDept = departments.find(d => d.id === newStageDeptId);
-                      const curDeptHead = members.find(m => 
-                        (m.department_id === newStageDeptId || m.department_ids?.includes(newStageDeptId)) && 
-                        (m.role_type === 'head' || m.role?.toLowerCase().includes('head') || m.role?.includes('رئيس'))
-                      );
+                      const curDeptHead = members.find(m => {
+                        const mRole = m.role || '';
+                        return (m.department_id === newStageDeptId || m.department_ids?.includes(newStageDeptId)) && 
+                          (m.role_type === 'head' || mRole.toLowerCase().includes('head') || mRole.includes('رئيس'));
+                      });
                       const deptEmployees = members.filter(m => 
                         m.role_type === 'employee' &&
                         (m.department_id === newStageDeptId || m.department_ids?.includes(newStageDeptId)) && 
@@ -766,10 +767,11 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
                     <div className="flex items-center gap-2 text-xs">
                       {(() => {
                         const stageDept = departments.find(d => d.id === stage.department_id);
-                        const stageHead = members.find(m => 
-                          (m.department_id === stage.department_id || m.department_ids?.includes(stage.department_id)) && 
-                          (m.role_type === 'head' || m.role?.toLowerCase().includes('head') || m.role?.includes('رئيس'))
-                        );
+                        const stageHead = members.find(m => {
+                          const mRole = m.role || '';
+                          return (m.department_id === stage.department_id || m.department_ids?.includes(stage.department_id)) && 
+                            (m.role_type === 'head' || mRole.toLowerCase().includes('head') || mRole.includes('رئيس'));
+                        });
                         const deptMembers = members.filter(m => 
                           m.role_type === 'employee' &&
                           (m.department_id === stage.department_id || m.department_ids?.includes(stage.department_id)) && 

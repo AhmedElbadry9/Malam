@@ -17,15 +17,15 @@ def get_department_by_id(db: Session, department_id: int) -> models.Department:
     return dept
 
 def create_department(db: Session, dept_in: schemas.DepartmentCreate) -> models.Department:
-    code = (dept_in.code or "").strip().lower()
+    code = (dept_in.code or "").strip().upper()
     name_ar = dept_in.name_ar.strip()
     name_en = (dept_in.name_en or "").strip() or name_ar
 
     if not code:
         # Auto-generate clean unique code from name_en or name_ar
-        base_slug = re.sub(r'[^a-zA-Z0-9]+', '_', name_en.lower()).strip('_')
+        base_slug = re.sub(r'[^a-zA-Z0-9]+', '_', name_en.upper()).strip('_')
         if not base_slug:
-            base_slug = "dept"
+            base_slug = "DEPT"
         code = base_slug
         counter = 1
         while db.query(models.Department).filter(models.Department.code == code).first():

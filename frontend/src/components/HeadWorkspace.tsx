@@ -4,7 +4,7 @@ import {
   RotateCcw, ExternalLink, ShieldCheck, Users, Search,
   Check, UserCheck, Send, AlertTriangle,
   Layers, History, Edit, FileText,
-  Globe, Sparkles, Copy
+  Globe, Sparkles
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import type { Client, Department, TeamMember, TaskStage } from '../types';
@@ -13,9 +13,11 @@ import { Card, CardBody } from './ui/Card';
 import { StatusBadge } from './ui/StatusBadge';
 import { PriorityBadge } from './ui/PriorityBadge';
 import { Modal } from './ui/Modal';
-import { Input } from './ui/Input';
 import { Textarea } from './ui/Textarea';
 import { EmptyState } from './ui/EmptyState';
+import { parseDeliverableUrls } from '../utils/urlHelper';
+import { DeliverablesDisplay } from './DeliverablesDisplay';
+import { DeliverableUrlsInput } from './DeliverableUrlsInput';
 
 interface HeadWorkspaceProps {
   currentMember: TeamMember;
@@ -59,22 +61,6 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
   const [activeTab, setActiveTab] = useState<'dispatch' | 'my_tasks' | 'review' | 'team' | 'completed'>('dispatch');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSubmissionToView, setSelectedSubmissionToView] = useState<{ client: Client; stage: TaskStage } | null>(null);
-  const [copiedSubmissionLink, setCopiedSubmissionLink] = useState(false);
-
-  const handleCopySubmissionLink = (url: string) => {
-    if (!url) return;
-    navigator.clipboard.writeText(url);
-    setCopiedSubmissionLink(true);
-    setTimeout(() => setCopiedSubmissionLink(false), 2000);
-  };
-
-  const toSafeExternalUrl = (url?: string | null) => {
-    if (!url) return '#';
-    const trimmed = url.trim();
-    if (!trimmed) return '#';
-    if (/^https?:\/\//i.test(trimmed)) return trimmed;
-    return `https://${trimmed}`;
-  };
 
   const formatTimestamp = (ts?: string | null) => {
     if (!ts) return 'غير محدد';
@@ -103,7 +89,7 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
   // Submit Deliverable Modal State (for tasks assigned directly to the Head)
   const [selectedStageToSubmit, setSelectedStageToSubmit] = useState<{ client: Client; stage: TaskStage } | null>(null);
   const [deliverableNote, setDeliverableNote] = useState('');
-  const [deliverableUrl, setDeliverableUrl] = useState('');
+  const [deliverableUrls, setDeliverableUrls] = useState<string[]>(['']);
   const [submitting, setSubmitting] = useState(false);
 
   // Gather tasks for this Head's departments OR tasks directly assigned to this Head
@@ -292,7 +278,8 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
   const handleOpenSubmitModal = (item: { client: Client; stage: TaskStage }) => {
     setSelectedStageToSubmit(item);
     setDeliverableNote(item.stage.deliverable_note || '');
-    setDeliverableUrl(item.stage.deliverable_url || '');
+    const parsed = parseDeliverableUrls(item.stage.deliverable_url);
+    setDeliverableUrls(parsed.length > 0 ? parsed : ['']);
   };
 
   const handleSubmitReview = async (e: React.FormEvent) => {
@@ -301,7 +288,8 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
 
     try {
       setSubmitting(true);
-      await onSubmitForReview(selectedStageToSubmit.stage.id, deliverableNote, deliverableUrl);
+      const finalUrl = deliverableUrls.map(u => u.trim()).filter(Boolean).join('\n');
+      await onSubmitForReview(selectedStageToSubmit.stage.id, deliverableNote, finalUrl);
       confetti({
         particleCount: 60,
         spread: 50,
@@ -309,7 +297,7 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
       });
       setSelectedStageToSubmit(null);
       setDeliverableNote('');
-      setDeliverableUrl('');
+      setDeliverableUrls(['']);
     } catch (err) {
       console.error(err);
     } finally {
@@ -859,49 +847,10 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                       {/* Deliverables Section */}
                       {(stage.deliverable_url || stage.deliverable_note) && (
                         <div className="space-y-2 pt-2 border-t border-slate-800 text-right">
-                          {stage.deliverable_url ? (
-                            <div className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-700/60 space-y-1.5">
-                              <div className="flex items-center justify-between gap-1 text-[11px] text-slate-300">
-                                <span className="font-bold flex items-center gap-1 text-indigo-300">
-                                  <ExternalLink className="w-3.5 h-3.5" />
-                                  <span>ملف المخرجات المسجل:</span>
-                                </span>
-                                <div className="flex items-center gap-1.5">
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleCopySubmissionLink(stage.deliverable_url || '');
-                                    }}
-                                    className="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[11px] font-bold flex items-center gap-1 border border-slate-600 cursor-pointer transition-colors"
-                                    title="نسخ الرابط المكتوب"
-                                  >
-                                    {copiedSubmissionLink ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                                    <span>{copiedSubmissionLink ? 'تم النسخ' : 'نسخ'}</span>
-                                  </button>
-                                  <a
-                                    href={toSafeExternalUrl(stage.deliverable_url)}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="px-2.5 py-0.5 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold flex items-center gap-1 transition-colors shadow-sm"
-                                    title="فتح الرابط في صفحة جديدة"
-                                  >
-                                    <ExternalLink className="w-3 h-3" />
-                                    <span>فتح ↗</span>
-                                  </a>
-                                </div>
-                              </div>
-                              <div className="font-mono text-xs text-indigo-200 bg-slate-950 p-2 rounded-lg border border-slate-800 break-all select-all font-semibold" dir="ltr">
-                                {stage.deliverable_url}
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="text-[11px] text-amber-400/90 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5">
-                              <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                              <span>لم يتم إرفاق رابط خارجي مع هذا التسليم</span>
-                            </div>
-                          )}
+                          <DeliverablesDisplay
+                            deliverableUrl={stage.deliverable_url}
+                            theme="indigo"
+                          />
 
                           {stage.deliverable_note && (
                             <div className="p-2 rounded-lg bg-slate-900/60 border border-slate-800 text-xs text-slate-300 italic">
@@ -1182,44 +1131,11 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
               )}
             </div>
 
-            {/* Link Box */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                <ExternalLink className="w-3.5 h-3.5 text-indigo-400" />
-                <span>رابط ملف العمل أو المخرجات المسجل:</span>
-              </label>
-              {selectedSubmissionToView.stage.deliverable_url ? (
-                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <span className="font-mono text-xs text-indigo-300 font-bold select-all break-all" dir="ltr">
-                    {selectedSubmissionToView.stage.deliverable_url}
-                  </span>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => handleCopySubmissionLink(selectedSubmissionToView.stage.deliverable_url || '')}
-                      className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer border border-slate-700"
-                      title="نسخ الرابط"
-                    >
-                      {copiedSubmissionLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{copiedSubmissionLink ? 'تم النسخ' : 'نسخ'}</span>
-                    </button>
-                    <a
-                      href={toSafeExternalUrl(selectedSubmissionToView.stage.deliverable_url)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      <span>فتح الرابط ↗</span>
-                    </a>
-                  </div>
-                </div>
-              ) : (
-                <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/60 text-xs text-slate-500 italic">
-                  لم يتم إرفاق رابط خارجي مع هذا التسليم.
-                </div>
-              )}
-            </div>
+            {/* Deliverables Display (1 or multiple links) */}
+            <DeliverablesDisplay
+              deliverableUrl={selectedSubmissionToView.stage.deliverable_url}
+              theme="indigo"
+            />
 
           </div>
         </Modal>
@@ -1236,30 +1152,12 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
             <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs space-y-1">
               <span className="text-slate-400 block">الشركة: <strong className="text-white">{selectedReviewStage.client.company_name}</strong></span>
               {selectedReviewStage.stage.deliverable_url && (
-                <div className="pt-1.5 flex items-center justify-between gap-2 border-t border-slate-800">
-                  <span className="text-slate-400">رابط المخرجات:</span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-mono text-indigo-300 font-bold max-w-[200px] truncate" dir="ltr">
-                      {selectedReviewStage.stage.deliverable_url}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleCopySubmissionLink(selectedReviewStage.stage.deliverable_url || '')}
-                      className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-750 text-slate-300 text-[10px] font-bold flex items-center gap-1 border border-slate-700 cursor-pointer"
-                    >
-                      {copiedSubmissionLink ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                      <span>{copiedSubmissionLink ? 'تم النسخ' : 'نسخ'}</span>
-                    </button>
-                    <a
-                      href={toSafeExternalUrl(selectedReviewStage.stage.deliverable_url)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-2.5 py-0.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold flex items-center gap-1"
-                    >
-                      <ExternalLink className="w-3 h-3" />
-                      <span>فتح ↗</span>
-                    </a>
-                  </div>
+                <div className="pt-2 border-t border-slate-800">
+                  <DeliverablesDisplay
+                    deliverableUrl={selectedReviewStage.stage.deliverable_url}
+                    theme="indigo"
+                    compact
+                  />
                 </div>
               )}
             </div>
@@ -1309,18 +1207,11 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
               <span className="text-slate-400 block">الشركة: <strong className="text-white">{selectedStageToSubmit.client.company_name}</strong></span>
             </div>
 
-            <div>
-              <label className="text-xs text-slate-300 block mb-1 font-bold">
-                رابط المخرجات على Google Drive أو ملف العمل:
-              </label>
-              <Input
-                type="url"
-                value={deliverableUrl}
-                onChange={(e) => setDeliverableUrl(e.target.value)}
-                placeholder="https://drive.google.com/drive/folders/..."
-                className="w-full text-xs"
-              />
-            </div>
+            <DeliverableUrlsInput
+              urls={deliverableUrls}
+              onChange={setDeliverableUrls}
+              disabled={submitting}
+            />
 
             <div>
               <label className="text-xs text-slate-300 block mb-1 font-bold">

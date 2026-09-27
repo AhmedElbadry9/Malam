@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  Building2, User, ChevronDown, ChevronUp, Folder, ExternalLink, 
+  Building2, User, ChevronDown, ChevronUp, Folder, 
   Clock, AlertCircle, Layers, 
   Edit, RefreshCw, Check, 
   ArrowUpRight, Plus, Copy, CheckCheck, Sparkles,
@@ -10,6 +10,7 @@ import type { Client, ClientGroupHierarchy, Department, TeamMember, TaskStage } 
 import { fetchClientsHierarchy } from '../services/api';
 import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
+import { DeliverablesDisplay } from './DeliverablesDisplay';
 
 interface ClientHierarchyTreeProps {
   onOpenDriveModal: (client: Client) => void;
@@ -57,21 +58,6 @@ export const ClientHierarchyTree: React.FC<ClientHierarchyTreeProps> = ({
   const [showTip, setShowTip] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-
-  const toSafeExternalUrl = (url?: string | null) => {
-    if (!url) return '#';
-    const trimmed = url.trim();
-    if (!trimmed) return '#';
-    if (/^https?:\/\//i.test(trimmed)) return trimmed;
-    return `https://${trimmed}`;
-  };
-
-  const handleCopyLink = (url: string) => {
-    if (!url) return;
-    navigator.clipboard.writeText(url);
-    setCopiedText(url);
-    setTimeout(() => setCopiedText(null), 2000);
-  };
 
   const handleConfirmDelete = async () => {
     if (!deleteTarget || !onDeleteClient) return;
@@ -790,30 +776,12 @@ export const ClientHierarchyTree: React.FC<ClientHierarchyTreeProps> = ({
                                               </div>
                                             )}
                                             {stage.deliverable_url && (
-                                              <div className="flex items-center justify-between gap-1 pt-1 border-t border-emerald-500/20">
-                                                <span className="font-mono text-emerald-200 truncate max-w-[180px]" dir="ltr">
-                                                  {stage.deliverable_url}
-                                                </span>
-                                                <div className="flex items-center gap-1 shrink-0">
-                                                  <button
-                                                    type="button"
-                                                    onClick={() => handleCopyLink(stage.deliverable_url || '')}
-                                                    className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[9px] font-bold flex items-center gap-0.5 border border-slate-700 cursor-pointer"
-                                                    title="نسخ الرابط"
-                                                  >
-                                                    {copiedText === stage.deliverable_url ? <Check className="w-2.5 h-2.5 text-emerald-400" /> : <Copy className="w-2.5 h-2.5" />}
-                                                    <span>{copiedText === stage.deliverable_url ? 'تم' : 'نسخ'}</span>
-                                                  </button>
-                                                  <a
-                                                    href={toSafeExternalUrl(stage.deliverable_url)}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-emerald-400 hover:text-emerald-300 hover:underline flex items-center gap-0.5 font-bold"
-                                                  >
-                                                    <span>فتح</span>
-                                                    <ExternalLink className="w-2.5 h-2.5" />
-                                                  </a>
-                                                </div>
+                                              <div className="pt-1.5 border-t border-emerald-500/20">
+                                                <DeliverablesDisplay
+                                                  deliverableUrl={stage.deliverable_url}
+                                                  theme="emerald"
+                                                  compact
+                                                />
                                               </div>
                                             )}
                                           </div>

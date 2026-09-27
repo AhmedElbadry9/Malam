@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import confetti from 'canvas-confetti';
 import { 
   CheckCircle2, Clock, FolderGit2, Send, Building2,
-  AlertTriangle, RotateCcw, ExternalLink, ShieldCheck, History, FileText,
-  Globe, Copy, Check
+  AlertTriangle, RotateCcw, ShieldCheck, History, FileText,
+  Globe
 } from 'lucide-react';
 import type { Client, TeamMember, TaskStage } from '../types';
 import { Button } from './ui/Button';
@@ -11,9 +11,11 @@ import { Card, CardBody } from './ui/Card';
 import { StatusBadge } from './ui/StatusBadge';
 import { PriorityBadge } from './ui/PriorityBadge';
 import { Modal } from './ui/Modal';
-import { Input } from './ui/Input';
 import { Textarea } from './ui/Textarea';
 import { EmptyState } from './ui/EmptyState';
+import { parseDeliverableUrls } from '../utils/urlHelper';
+import { DeliverablesDisplay } from './DeliverablesDisplay';
+import { DeliverableUrlsInput } from './DeliverableUrlsInput';
 
 interface EmployeeWorkspaceProps {
   currentMember: TeamMember;
@@ -36,17 +38,9 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
   const [selectedStageToSubmit, setSelectedStageToSubmit] = useState<{ client: Client; stage: TaskStage } | null>(null);
   const [selectedTaskForDetails, setSelectedTaskForDetails] = useState<{ client: Client; stage: TaskStage } | null>(null);
   const [selectedSubmissionToView, setSelectedSubmissionToView] = useState<{ client: Client; stage: TaskStage } | null>(null);
-  const [copiedSubmissionLink, setCopiedSubmissionLink] = useState(false);
   const [deliverableNote, setDeliverableNote] = useState('');
-  const [deliverableUrl, setDeliverableUrl] = useState('');
+  const [deliverableUrls, setDeliverableUrls] = useState<string[]>(['']);
   const [submitting, setSubmitting] = useState(false);
-
-  const handleCopySubmissionLink = (url: string) => {
-    if (!url) return;
-    navigator.clipboard.writeText(url);
-    setCopiedSubmissionLink(true);
-    setTimeout(() => setCopiedSubmissionLink(false), 2000);
-  };
 
   // Filter tasks assigned ONLY to this logged in employee
   const memberTasks: { client: Client; stage: TaskStage }[] = [];
@@ -67,7 +61,8 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
   const handleOpenSubmitModal = (item: { client: Client; stage: TaskStage }) => {
     setSelectedStageToSubmit(item);
     setDeliverableNote(item.stage.deliverable_note || '');
-    setDeliverableUrl(item.stage.deliverable_url || '');
+    const parsed = parseDeliverableUrls(item.stage.deliverable_url);
+    setDeliverableUrls(parsed.length > 0 ? parsed : ['']);
   };
 
   const handleSubmitReview = async (e: React.FormEvent) => {
@@ -76,7 +71,8 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
 
     try {
       setSubmitting(true);
-      await onSubmitForReview(selectedStageToSubmit.stage.id, deliverableNote, deliverableUrl);
+      const finalUrl = deliverableUrls.map(u => u.trim()).filter(Boolean).join('\n');
+      await onSubmitForReview(selectedStageToSubmit.stage.id, deliverableNote, finalUrl);
 
       confetti({
         particleCount: 60,
@@ -86,7 +82,7 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
 
       setSelectedStageToSubmit(null);
       setDeliverableNote('');
-      setDeliverableUrl('');
+      setDeliverableUrls(['']);
     } catch (err: any) {
       console.error(err);
       alert(err.message || 'تعذر تسليم المرحلة للمراجعة، يرجى المحاولة مرة أخرى.');
@@ -574,14 +570,10 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
               سيتم إحالة هذه المرحلة إلى رئيس القسم أو إدارة الوكالة لمراجعتها والتأكد من مطابقتها للمواصفات قبل اعتمادها رسمياً.
             </div>
 
-            <Input
-              label="رابط ملف المخرجات والتسليم (Deliverable URL):"
-              type="text"
-              dir="ltr"
-              value={deliverableUrl}
-              onChange={(e) => setDeliverableUrl(e.target.value)}
-              placeholder="https://drive.google.com/... أو https://figma.com/file/..."
-              hint="رابط مجلد Google Drive، ملف Figma، أو رابط تجريبي مباشر"
+            <DeliverableUrlsInput
+              urls={deliverableUrls}
+              onChange={setDeliverableUrls}
+              disabled={submitting}
             />
 
             <Textarea
@@ -639,44 +631,11 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
               )}
             </div>
 
-            {/* Link Box */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                <ExternalLink className="w-3.5 h-3.5 text-indigo-400" />
-                <span>رابط ملف العمل أو المخرجات المسجل:</span>
-              </label>
-              {selectedSubmissionToView.stage.deliverable_url ? (
-                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <span className="font-mono text-xs text-indigo-300 font-bold select-all break-all" dir="ltr">
-                    {selectedSubmissionToView.stage.deliverable_url}
-                  </span>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => handleCopySubmissionLink(selectedSubmissionToView.stage.deliverable_url || '')}
-                      className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer border border-slate-700"
-                      title="نسخ الرابط"
-                    >
-                      {copiedSubmissionLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{copiedSubmissionLink ? 'تم النسخ' : 'نسخ'}</span>
-                    </button>
-                    <a
-                      href={selectedSubmissionToView.stage.deliverable_url.startsWith('http') ? selectedSubmissionToView.stage.deliverable_url : `https://${selectedSubmissionToView.stage.deliverable_url}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      <span>فتح الرابط ↗</span>
-                    </a>
-                  </div>
-                </div>
-              ) : (
-                <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/60 text-xs text-slate-500 italic">
-                  لم يتم إرفاق رابط خارجي مع هذا التسليم.
-                </div>
-              )}
-            </div>
+            {/* Deliverables Display (1 or multiple links) */}
+            <DeliverablesDisplay
+              deliverableUrl={selectedSubmissionToView.stage.deliverable_url}
+              theme="indigo"
+            />
 
           </div>
         </Modal>

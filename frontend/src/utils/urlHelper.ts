@@ -59,3 +59,30 @@ export function generateAgencyEmail(url: string): string {
   if (!brand) return '';
   return `info+${brand}@malamsa.com`;
 }
+
+/**
+ * Safely converts any user-inputted link into an absolute external URL.
+ * Prevents the SPA router from treating domain-only or relative strings as local routes.
+ */
+export function toSafeExternalUrl(url?: string | null): string {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+  if (/^[a-zA-Z][a-zA-Z\d+\-.]*?:/.test(trimmed)) {
+    return trimmed;
+  }
+  return `https://${trimmed}`;
+}
+
+/**
+ * Parses deliverable URLs stored in a task stage.
+ * Supports multiple URLs separated by newlines or commas,
+ * while safely preserving single URLs.
+ */
+export function parseDeliverableUrls(raw?: string | null): string[] {
+  if (!raw) return [];
+  return raw
+    .split(/\r?\n/)
+    .map(u => u.trim())
+    .filter(u => u.length > 0);
+}

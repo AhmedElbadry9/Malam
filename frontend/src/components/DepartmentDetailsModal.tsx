@@ -1,14 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { 
   Layers, Users, FolderGit2, X, Clock, CheckCircle2, 
-  Search, ShieldCheck, Crown, ExternalLink, Calendar, 
+  Search, ShieldCheck, Crown, Calendar, 
   FileText, Folder, Sparkles, UserCheck, 
-  ArrowUpRight, Check, AlertTriangle, Briefcase, Camera, 
-  Palette, Code, Megaphone, Target, CheckCircle, Copy
+  Check, AlertTriangle, Briefcase, Camera, 
+  Palette, Code, Megaphone, Target, CheckCircle
 } from 'lucide-react';
 import type { Department, TeamMember, Client, TaskStage } from '../types';
 import { StatusBadge } from './ui/StatusBadge';
 import { PriorityBadge } from './ui/PriorityBadge';
+import { DeliverablesDisplay } from './DeliverablesDisplay';
 
 interface DepartmentDetailsModalProps {
   departmentId: number;
@@ -115,22 +116,6 @@ export const DepartmentDetailsModal: React.FC<DepartmentDetailsModalProps> = ({
   const [activeTab, setActiveTab] = useState<ModalTab>('active');
   const [taskSearchQuery, setTaskSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'in_progress' | 'under_review' | 'revision_requested' | 'pending'>('all');
-  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
-
-  const handleCopy = (url: string) => {
-    if (!url) return;
-    navigator.clipboard.writeText(url);
-    setCopiedUrl(url);
-    setTimeout(() => setCopiedUrl(null), 2000);
-  };
-
-  const toSafeExternalUrl = (url?: string | null) => {
-    if (!url) return '#';
-    const trimmed = url.trim();
-    if (!trimmed) return '#';
-    if (/^https?:\/\//i.test(trimmed)) return trimmed;
-    return `https://${trimmed}`;
-  };
 
   const department = useMemo(() => departments.find(d => d.id === departmentId), [departments, departmentId]);
   const theme = useMemo(() => department ? getDeptTheme(department) : null, [department]);
@@ -571,27 +556,11 @@ export const DepartmentDetailsModal: React.FC<DepartmentDetailsModalProps> = ({
                             )}
 
                             {item.task.deliverable_url && (
-                              <div className="flex items-center gap-1">
-                                <button
-                                  type="button"
-                                  onClick={() => handleCopy(item.task.deliverable_url || '')}
-                                  className="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium flex items-center gap-1 border border-slate-700 cursor-pointer transition-colors"
-                                  title="نسخ رابط التسليم"
-                                >
-                                  {copiedUrl === item.task.deliverable_url ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                                  <span>{copiedUrl === item.task.deliverable_url ? 'تم النسخ' : 'نسخ'}</span>
-                                </button>
-                                <a
-                                  href={toSafeExternalUrl(item.task.deliverable_url)}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-300 text-xs font-medium flex items-center gap-1 transition-all"
-                                  title="معاينة رابط التسليم"
-                                >
-                                  <ArrowUpRight className="w-3.5 h-3.5" />
-                                  <span>التسليم ↗</span>
-                                </a>
-                              </div>
+                              <DeliverablesDisplay
+                                deliverableUrl={item.task.deliverable_url}
+                                theme="emerald"
+                                compact
+                              />
                             )}
                           </div>
 
@@ -680,25 +649,11 @@ export const DepartmentDetailsModal: React.FC<DepartmentDetailsModalProps> = ({
                         )}
 
                         {item.task.deliverable_url && (
-                          <div className="flex items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => handleCopy(item.task.deliverable_url || '')}
-                              className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer border border-slate-700"
-                              title="نسخ رابط التسليم"
-                            >
-                              {copiedUrl === item.task.deliverable_url ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                            </button>
-                            <a
-                              href={toSafeExternalUrl(item.task.deliverable_url)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="p-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 transition-colors border border-emerald-500/30"
-                              title="عرض الملف المسلّم"
-                            >
-                              <ExternalLink className="w-4 h-4" />
-                            </a>
-                          </div>
+                          <DeliverablesDisplay
+                            deliverableUrl={item.task.deliverable_url}
+                            theme="emerald"
+                            compact
+                          />
                         )}
                       </div>
                     </div>

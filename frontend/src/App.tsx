@@ -48,6 +48,14 @@ function MainApp() {
   const [selectedBriefClient, setSelectedBriefClient] = useState<Client | null>(null);
   const [selectedHistoryStage, setSelectedHistoryStage] = useState<{ stage: TaskStage; client?: Client } | null>(null);
 
+  // Completely strip sensitive agency email away from regular employees
+  const sanitizedClientsForEmployee = useMemo(() => {
+    return clients.map(c => ({
+      ...c,
+      agency_email: undefined
+    }));
+  }, [clients]);
+
   const loadData = async () => {
     try {
       setLoading(true);
@@ -388,11 +396,11 @@ function MainApp() {
               />
             )}
 
-            {/* Employee Workspace */}
+            {/* Employee Workspace - agency_email strictly hidden and withheld */}
             {currentUser.type === 'employee' && currentUser.member && (
               <EmployeeWorkspace
                 currentMember={currentUser.member}
-                clients={clients}
+                clients={sanitizedClientsForEmployee}
                 onSubmitForReview={handleSubmitForReview}
                 onOpenDriveModal={setSelectedDriveClient}
                 onOpenBriefModal={setSelectedBriefClient}

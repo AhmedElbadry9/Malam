@@ -4,7 +4,7 @@ import {
   RotateCcw, ExternalLink, ShieldCheck, Users, Search,
   Check, UserCheck, Send, AlertTriangle,
   Layers, History, Edit, FileText,
-  Globe, Sparkles
+  Globe, Sparkles, Mail, Copy
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import type { Client, Department, TeamMember, TaskStage } from '../types';
@@ -586,6 +586,12 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                               <span>{client.company_name}</span>
                               <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-teal-400" />
                             </div>
+                            {client.agency_email && (
+                              <div className="text-[10px] font-mono text-purple-300 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20 mt-1 inline-flex items-center gap-1">
+                                <Mail className="w-3 h-3 text-purple-400" />
+                                <span>{client.agency_email}</span>
+                              </div>
+                            )}
                           </button>
                         </td>
 
@@ -738,6 +744,12 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                           <Building2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
                           <span>{client.company_name}</span>
                         </h3>
+                        {client.agency_email && (
+                          <div className="flex items-center gap-1.5 mt-1.5 text-[11px] font-mono text-purple-300 bg-purple-500/10 px-2 py-0.5 rounded-md border border-purple-500/20 w-fit">
+                            <Mail className="w-3 h-3 text-purple-400 shrink-0" />
+                            <span>{client.agency_email}</span>
+                          </div>
+                        )}
                       </div>
                       <StatusBadge status={stage.status} size="sm" />
                     </div>
@@ -1521,6 +1533,40 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                             </span>
                           </td>
                         </tr>
+
+                        {/* Row: إيميل الوكالة المخصص للمنصة (زد / سلة) */}
+                        {selectedTaskForDispatch.client.agency_email && (
+                          <tr className="hover:bg-slate-900/40 transition-colors">
+                            <td className="w-36 sm:w-44 p-3.5 bg-slate-900/80 text-slate-300 font-bold border-l border-slate-800/80 align-middle whitespace-nowrap">
+                              <div className="flex items-center gap-2">
+                                <Mail className="w-4 h-4 text-purple-400 shrink-0" />
+                                <span>إيميل الوكالة (المتجر):</span>
+                              </div>
+                            </td>
+                            <td className="p-3.5 align-middle">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-mono text-xs font-bold text-purple-300 bg-purple-500/10 px-2.5 py-1 rounded-lg border border-purple-500/25 select-all">
+                                  {selectedTaskForDispatch.client.agency_email}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(selectedTaskForDispatch.client.agency_email!);
+                                    alert('تم نسخ إيميل الوكالة بنجاح!');
+                                  }}
+                                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer flex items-center gap-1 text-[11px]"
+                                  title="نسخ الإيميل"
+                                >
+                                  <Copy className="w-3.5 h-3.5" />
+                                  <span>نسخ</span>
+                                </button>
+                                <span className="text-[10px] text-purple-400/80 font-normal">
+                                  (مخصص لرئيس القسم والإدارة فقط)
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
 
                         {/* Row 4: الوصول السريع والملفات */}
                         <tr className="hover:bg-slate-900/40 transition-colors">

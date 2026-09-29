@@ -251,12 +251,12 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
     const fromUrl = extractBrandFromUrl(websiteUrl);
     if (fromUrl) return fromUrl;
     const cleanName = companyName.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
-    return cleanName || 'zidstore';
+    return cleanName || (platform === 'سلة' ? 'sallastore' : 'zidstore');
   };
 
   const handlePlatformChange = (newPlatform: string) => {
     setPlatform(newPlatform);
-    if (newPlatform === 'زد') {
+    if (newPlatform === 'زد' || newPlatform === 'سلة') {
       if (!isEmailManuallyEdited || !agencyEmail) {
         const brand = getBrandSlug();
         setAgencyEmail(`info+${brand}@malamsa.com`);
@@ -269,7 +269,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
   };
 
   useEffect(() => {
-    if (platform === 'زد' && !isEmailManuallyEdited) {
+    if ((platform === 'زد' || platform === 'سلة') && !isEmailManuallyEdited) {
       const brand = getBrandSlug();
       if (brand) {
         setAgencyEmail(`info+${brand}@malamsa.com`);
@@ -744,7 +744,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
                   required
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
-                  placeholder="مثال: cuplicious"
+                  placeholder="مثال: Malam"
                 />
                 {isCheckingDrive && (
                   <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-slate-400">
@@ -863,9 +863,9 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
                   dir="ltr"
                   value={websiteUrl}
                   onChange={(e) => setWebsiteUrl(e.target.value)}
-                  placeholder="www.cuplicious.com"
+                  placeholder="www.malam.com"
                   icon={<Globe className="w-4 h-4" />}
-                  hint="يتم توليد إيميل الوكالة منه تلقائياً لمنصة زد"
+                  hint="يتم توليد إيميل الوكالة منه تلقائياً لمنصتي زد وسلة"
                 />
               </div>
 
@@ -876,9 +876,9 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
                     <Mail className="w-4 h-4 text-indigo-400" />
                     <span>إيميل الوكالة المخصص:</span>
                   </label>
-                  {platform === 'زد' ? (
+                  {(platform === 'زد' || platform === 'سلة') ? (
                     <span className="text-[10px] text-purple-400 bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-purple-500/30 font-bold">
-                      توليد تلقائي (زد)
+                      توليد تلقائي ({platform})
                     </span>
                   ) : (
                     <span className="text-[10px] text-slate-400 bg-slate-800 px-2.5 py-0.5 rounded-full border border-slate-700">
@@ -899,7 +899,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
                     placeholder="info+store@malamsa.com"
                     className="flex-1 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-100 placeholder:text-slate-500 text-xs sm:text-sm px-3.5 py-2.5 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono tracking-wide"
                   />
-                  {platform === 'زد' && (
+                  {(platform === 'زد' || platform === 'سلة') && (
                     <Button
                       type="button"
                       size="sm"
@@ -929,8 +929,8 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
                 </div>
 
                 <p className="text-[11px] text-slate-400">
-                  {platform === 'زد' 
-                    ? 'يتم توليده تلقائياً لمنصة زد بناءً على الرابط أو اسم المتجر أعلاه، ويمكنك تعديله يدوياً وسيتم حفظه'
+                  {(platform === 'زد' || platform === 'سلة') 
+                    ? `يتم توليده تلقائياً لمنصة ${platform} بناءً على الرابط أو اسم المتجر أعلاه، ويمكنك تعديله يدوياً وسيتم حفظه`
                     : 'يظل فارغاً لبقية المنصات، ويمكنك كتابته وتعديله يدوياً لحفظه'}
                 </p>
               </div>

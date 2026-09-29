@@ -19,14 +19,17 @@ export function extractBrandFromUrl(url: string): string {
   // Strip protocol
   clean = clean.replace(/^https?:\/\//, '');
 
-  // Strip path, query, hash
-  clean = clean.split('/')[0].split('?')[0].split('#')[0];
-
-  // Strip port
-  clean = clean.split(':')[0];
-
   // Strip leading www.
   clean = clean.replace(/^www\./, '');
+
+  // If path is a store handle on salla or zid platforms (e.g., salla.sa/mystore or zid.store/mystore)
+  const platformSubPathMatch = clean.match(/^(?:salla\.(?:sa|com)|zid\.(?:store|sa))\/([a-z0-9_-]+)/i);
+  if (platformSubPathMatch && platformSubPathMatch[1]) {
+    return platformSubPathMatch[1].toLowerCase();
+  }
+
+  // Strip path, query, hash
+  clean = clean.split('/')[0].split('?')[0].split('#')[0];
 
   const parts = clean.split('.').filter(Boolean);
   if (parts.length === 0) return '';

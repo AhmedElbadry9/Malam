@@ -479,12 +479,13 @@ export async function updateClientDrivePermission(
   clientId: number,
   permissionId: string,
   role: 'reader' | 'writer',
-  folderId?: string
+  folderId?: string,
+  folderType?: string
 ): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/clients/${clientId}/drive-permissions/${permissionId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ role, folder_id: folderId }),
+    body: JSON.stringify({ role, folder_id: folderId, folder_type: folderType }),
   });
 
   if (!res.ok) {

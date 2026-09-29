@@ -126,6 +126,7 @@ class ShareDriveRequest(BaseModel):
 class UpdateDrivePermissionRequest(BaseModel):
     role: str = Field(default="reader")
     folder_id: Optional[str] = None
+    folder_type: Optional[str] = "root"
 
 
 class ClientGroupHierarchy(BaseModel):

@@ -394,7 +394,8 @@ def get_client_drive_permissions(db: Session, client_id: int, folder_id: Optiona
 
 def update_client_drive_permission(db: Session, client_id: int, permission_id: str, req: schemas.UpdateDrivePermissionRequest):
     client = get_client_by_id(db, client_id)
-    target_folder_id = _resolve_folder_id(client, req.folder_id, req.folder_type or "root")
+    folder_type = getattr(req, "folder_type", None) or "root"
+    target_folder_id = _resolve_folder_id(client, req.folder_id, folder_type)
     if not target_folder_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="لا يوجد مجلد Google Drive مرتبط بهذا العميل")
 

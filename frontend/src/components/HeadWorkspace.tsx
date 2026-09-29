@@ -118,6 +118,7 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
     if (m.role_type === 'admin' || m.role_type === 'super_admin' || m.role_type === 'manager') {
       return false;
     }
+    if (m.id === currentMember.id) return true;
     if (memberDeptIds.length === 0) return true;
     const targetDeptIds = selectedDeptFilter === 'all' ? memberDeptIds : [selectedDeptFilter as number];
     return targetDeptIds.some(dId => m.department_id === dId || (m.department_ids && m.department_ids.includes(dId)));
@@ -219,17 +220,23 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
       } : null);
 
       const assignedMem = members.find(m => m.id === newMemberId);
-      const successText = assignedMem 
-        ? `تم إسناد المهمة وإرسال التوجيهات إلى ${assignedMem.name} بنجاح! 🚀`
-        : 'تم حفظ وتحديث بيانات المهمة بنجاح!';
+      const isSelf = newMemberId === currentMember.id;
+      const successText = isSelf
+        ? 'تم إسناد المهمة لنفسك بنجاح! تم نقلك لتبويب "مهامي المسندة لي شخصياً" للبدء 🚀'
+        : (assignedMem 
+          ? `تم إسناد المهمة وإرسال التوجيهات إلى ${assignedMem.name} بنجاح! 🚀`
+          : 'تم حفظ وتحديث بيانات المهمة بنجاح!');
       
       setDispatchSuccessMsg(successText);
       confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
 
-      // Automatically close modal after smooth confirmation
+      // Automatically close modal and switch tab if self-assigned
       setTimeout(() => {
         setSelectedTaskForDispatch(null);
         setDispatchSuccessMsg(null);
+        if (isSelf) {
+          setActiveTab('my_tasks');
+        }
       }, 1200);
 
     } catch (err) {
@@ -755,7 +762,21 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                   </CardBody>
 
                   <div className="p-3 bg-slate-950/40 border-t border-slate-800 flex items-center justify-between gap-2">
-                    {stage.status !== 'completed' ? (
+                    {stage.status === 'under_review' ? (
+                      <div className="flex-1 flex items-center justify-between gap-1.5 px-3 py-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold">
+                        <span className="flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse shrink-0" />
+                          <span>بانتظار اعتماد الإدارة</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenSubmitModal({ client, stage })}
+                          className="text-[10px] text-amber-200 underline hover:text-white cursor-pointer font-normal"
+                        >
+                          تعديل التسليم
+                        </button>
+                      </div>
+                    ) : stage.status !== 'completed' ? (
                       <Button
                         variant="primary"
                         size="sm"
@@ -1363,9 +1384,16 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                     
                     {/* Select Employee */}
                     <div>
-                      <label className="text-xs font-bold text-slate-200 mb-1.5 flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-md bg-teal-500/15 text-teal-400 border border-teal-500/30 flex items-center justify-center text-[10px] font-black shrink-0">1</span>
-                        اختر الموظف المنفذ
+                      <label className="text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
+                        <span className="flex items-center gap-2">
+                          <span className="w-5 h-5 rounded-md bg-teal-500/15 text-teal-400 border border-teal-500/30 flex items-center justify-center text-[10px] font-black shrink-0">1</span>
+                          تحديد الموظف المنفذ
+                        </span>
+                        {dispatchMemberId === currentMember.id && (
+                          <span className="text-[10px] font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">
+                            تنفيذ شخصي
+                          </span>
+                        )}
                       </label>
                       <select
                         required
@@ -1374,11 +1402,21 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                         className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-teal-500 focus:ring-1 focus:ring-teal-500/40 text-white font-bold text-xs cursor-pointer outline-none transition-colors"
                       >
                         <option value="" disabled>— اختر الموظف المنفذ من فريقك —</option>
-                        {deptMembers.map(m => (
-                          <option key={m.id} value={m.id}>
-                            {m.name} — {m.role} {m.id === currentMember.id ? '(أنت)' : ''}
-                          </option>
-                        ))}
+                        
+                        {/* Option to assign to Head directly */}
+                        <option value={currentMember.id} className="font-bold text-indigo-400 bg-indigo-950/40">
+                          ⭐ إسناد المهمة لي شخصياً ({currentMember.name}) — سأقوم بتنفيذها بنفسي
+                        </option>
+
+                        {deptMembers.filter(m => m.id !== currentMember.id).length > 0 && (
+                          <optgroup label="موظفو وفريق القسم:">
+                            {deptMembers.filter(m => m.id !== currentMember.id).map(m => (
+                              <option key={m.id} value={m.id}>
+                                {m.name} — {m.role}
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
                       </select>
                     </div>
 
@@ -1386,14 +1424,18 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                     <div>
                       <label className="text-xs font-bold text-teal-300 mb-1.5 flex items-center gap-2">
                         <span className="w-5 h-5 rounded-md bg-teal-500/15 text-teal-400 border border-teal-500/30 flex items-center justify-center text-[10px] font-black shrink-0">2</span>
-                        توجيهاتك وتعليمات العمل للموظف
+                        {dispatchMemberId === currentMember.id 
+                          ? 'ملاحظاتك وخطة عملك الشخصية للمهمة'
+                          : 'توجيهاتك وتعليمات العمل للموظف'}
                         <span className="text-[10px] text-slate-500 font-normal mr-auto">اختياري</span>
                       </label>
                       <textarea
                         rows={4}
                         value={dispatchInstructions}
                         onChange={(e) => setDispatchInstructions(e.target.value)}
-                        placeholder="اكتب توجيهاتك الفنية وتفاصيل العمل المطلوبة من الموظف بدقة..."
+                        placeholder={dispatchMemberId === currentMember.id
+                          ? "اكتب أي ملاحظات أو روابط مرجعية لخطتك في تنفيذ هذه المهمة..."
+                          : "اكتب توجيهاتك الفنية وتفاصيل العمل المطلوبة من الموظف بدقة..."}
                         className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 focus:border-teal-500 focus:ring-1 focus:ring-teal-500/40 text-white placeholder-slate-500 leading-relaxed text-xs resize-none outline-none transition-colors"
                       />
                     </div>
@@ -1590,9 +1632,11 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                     icon={<Send className="w-3.5 h-3.5" />}
                     className="bg-teal-600 hover:bg-teal-500 text-white font-black shadow-lg shadow-teal-900/30 px-5"
                   >
-                    {selectedTaskForDispatch.stage.assigned_member_id 
-                      ? 'حفظ وتحديث التكليف' 
-                      : 'إرسال وتكليف المهمة'}
+                    {dispatchMemberId === currentMember.id
+                      ? 'تأكيد إسناد المهمة لي شخصياً والبدء'
+                      : (selectedTaskForDispatch.stage.assigned_member_id 
+                        ? 'حفظ وتحديث التكليف' 
+                        : 'إرسال وتكليف المهمة')}
                   </Button>
                 )}
               </div>

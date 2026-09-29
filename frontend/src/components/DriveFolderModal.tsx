@@ -182,14 +182,27 @@ export const DriveFolderModal: React.FC<DriveFolderModalProps> = ({
   };
 
   const handleUpdateRole = async (permId: string, newRole: 'reader' | 'writer') => {
+    const previousPermissions = [...permissions];
     try {
       setUpdatingPermId(permId);
       setShareSuccessMsg('');
       setShareErrorMsg('');
-      const res = await updateClientDrivePermission(client.id, permId, newRole, currentTargetMeta.url);
+
+      // Optimistically update GUI immediately
+      setPermissions(prev => prev.map(p => p.id === permId ? { ...p, role: newRole } : p));
+
+      const res = await updateClientDrivePermission(
+        client.id, 
+        permId, 
+        newRole, 
+        currentTargetMeta.url,
+        currentTargetMeta.key
+      );
       setShareSuccessMsg(res.message);
       await loadPermissions(selectedFolderTarget);
     } catch (err: any) {
+      // Revert if failed
+      setPermissions(previousPermissions);
       setShareErrorMsg(err.message || 'فشل تعديل الصلاحية');
     } finally {
       setUpdatingPermId(null);

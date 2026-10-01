@@ -46,13 +46,14 @@ def change_password(member_id: int, req: schemas.ChangePasswordRequest, db: Sess
 @router.delete("/{member_id}")
 def delete_team_member(
     member_id: int,
+    force: bool = False,
     db: Session = Depends(get_db),
     current_user: Optional[models.TeamMember] = Depends(get_current_user)
 ):
     """
-    حذف حساب موظف بشرط عدم وجود مهام مسندة إليه وتقييد صلاحيات مدير المشاريع.
+    حذف حساب موظف مع دعم فك ارتباط المهام المسندة وتقييد صلاحيات مدير المشاريع.
     """
-    return member_service.delete_member(db, member_id, current_user=current_user)
+    return member_service.delete_member(db, member_id, current_user=current_user, force=force)
 
 @router.put("/{member_id}/toggle-active")
 def toggle_user_active_status(member_id: int, db: Session = Depends(get_db)):

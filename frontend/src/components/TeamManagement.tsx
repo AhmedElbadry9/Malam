@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   UserPlus, KeyRound, CheckCircle2, 
-  XCircle, Search, Mail, UserCheck, Save, Phone, Edit, Trash2, Check, Plus, Crown, Target, Briefcase, Award, Building2, Loader2
+  XCircle, Search, Mail, UserCheck, Save, Phone, Edit, Trash2, Check, Plus, Crown, Target, Briefcase, Award, Building2, Loader2, AlertTriangle
 } from 'lucide-react';
 import type { Department, TeamMember } from '../types';
 
@@ -11,7 +11,7 @@ interface TeamManagementProps {
   currentUserRole?: 'admin' | 'manager' | 'head' | 'employee' | 'super_admin';
   onAddMember: (memberData: any) => Promise<void>;
   onUpdateMember: (memberId: number, memberData: any) => Promise<void>;
-  onDeleteMember: (memberId: number) => Promise<void>;
+  onDeleteMember: (memberId: number, force?: boolean) => Promise<void>;
   onChangePassword: (memberId: number, newPassword: string) => Promise<void>;
   onToggleActive: (memberId: number) => Promise<void>;
 }
@@ -113,15 +113,60 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
   const [newPassword, setNewPassword] = useState('');
   const [pwdLoading, setPwdLoading] = useState(false);
   const [togglingMemberId, setTogglingMemberId] = useState<number | null>(null);
+  // Delete Modal State
+  const [memberToDelete, setMemberToDelete] = useState<TeamMember | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteForce, setDeleteForce] = useState(true);
+  const [notificationMsg, setNotificationMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const showNotification = (text: string, type: 'success' | 'error' = 'success') => {
+    setNotificationMsg({ type, text });
+    setTimeout(() => setNotificationMsg(null), 4000);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!memberToDelete) return;
+    try {
+      setDeleteLoading(true);
+      setDeleteError(null);
+      await onDeleteMember(memberToDelete.id, deleteForce);
+      showNotification(`تم حذف حساب "${memberToDelete.name}" بنجاح`, 'success');
+      setMemberToDelete(null);
+    } catch (err: any) {
+      console.error(err);
+      setDeleteError(err.message || 'فشل حذف الحساب من النظام');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleDeactivateInstead = async () => {
+    if (!memberToDelete) return;
+    try {
+      setDeleteLoading(true);
+      setDeleteError(null);
+      if (memberToDelete.is_active !== false) {
+        await onToggleActive(memberToDelete.id);
+        showNotification(`تم تعطيل حساب "${memberToDelete.name}" بنجاح`, 'success');
+      }
+      setMemberToDelete(null);
+    } catch (err: any) {
+      setDeleteError(err.message || 'فشل تعطيل الحساب');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
 
   const handleToggleActiveStatus = async (e: React.MouseEvent, member: TeamMember) => {
     e.stopPropagation();
     try {
       setTogglingMemberId(member.id);
       await onToggleActive(member.id);
+      showNotification(`تم تحديث حالة حساب "${member.name}" بنجاح`, 'success');
     } catch (err: any) {
       console.error(err);
-      alert(err.message || 'فشل تغيير حالة الحساب');
+      showNotification(err.message || 'فشل تغيير حالة الحساب', 'error');
     } finally {
       setTogglingMemberId(null);
     }
@@ -569,17 +614,14 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
                                 <KeyRound className="w-3.5 h-3.5" />
                               </button>
                               <button
-                                onClick={async (e) => { 
+                                type="button"
+                                onClick={(e) => { 
                                   e.stopPropagation(); 
-                                  if (window.confirm(`هل أنت متأكد من حذف الحساب الخاص بـ "${member.name}" نهائياً؟`)) {
-                                    try {
-                                      await onDeleteMember(member.id);
-                                    } catch (err: any) {
-                                      alert(err.message || 'فشل الحذف. قد يكون للحساب مهام مرتبطة.');
-                                    }
-                                  }
+                                  setMemberToDelete(member);
+                                  setDeleteError(null);
+                                  setDeleteForce(true);
                                 }}
-                                className="p-1.5 rounded-lg bg-white/5 hover:bg-rose-600 text-gray-300 hover:text-white transition-all cursor-pointer"
+                                className="p-1.5 rounded-lg bg-white/5 hover:bg-rose-600 text-gray-300 hover:text-white transition-all cursor-pointer active:scale-95"
                                 title="حذف الحساب نهائياً"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -918,6 +960,138 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({
             </form>
 
           </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {memberToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
+          <div className="relative w-full max-w-lg rounded-3xl border border-rose-500/30 bg-slate-950 p-6 sm:p-7 shadow-2xl shadow-rose-950/40 text-right overflow-hidden">
+            {/* Ambient Glow */}
+            <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-rose-500 via-red-500 to-amber-500"></div>
+            <div className="absolute -top-12 -right-12 w-40 h-40 bg-rose-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+            {/* Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white">تأكيد حذف الحساب نهائياً</h3>
+                  <p className="text-[11px] text-gray-400 mt-0.5">يرجى تأكيد رغبتك في حذف هذا الكادر من نظام الوكالة</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={deleteLoading}
+                onClick={() => setMemberToDelete(null)}
+                className="text-gray-400 hover:text-white p-1.5 rounded-xl hover:bg-white/10 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Member Card Preview */}
+            <div className="my-5 p-4 rounded-2xl bg-slate-900/80 border border-white/10 flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-600/30 to-slate-800 border border-rose-500/30 flex items-center justify-center text-white font-black text-base shrink-0">
+                {memberToDelete.name.charAt(0)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-white text-sm truncate">{memberToDelete.name}</span>
+                  {getRoleBadge(memberToDelete.role_type || 'employee')}
+                </div>
+                <p className="text-xs text-gray-400 truncate mt-0.5">{memberToDelete.role}</p>
+                <p className="text-[11px] text-gray-500 font-mono truncate mt-0.5">{memberToDelete.email}</p>
+              </div>
+            </div>
+
+            {/* Error Alert inside Modal */}
+            {deleteError && (
+              <div className="mb-4 p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-bold flex items-center gap-2.5 animate-fadeIn">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-rose-400" />
+                <span>{deleteError}</span>
+              </div>
+            )}
+
+            {/* Warning Details & Options */}
+            <div className="space-y-3 mb-6">
+              <p className="text-xs text-gray-300 leading-relaxed">
+                ⚠️ هذا الإجراء سيؤدي إلى إزالة الحساب وبيانات تسجيل الدخول نهائياً من قاعدة البيانات.
+              </p>
+
+              <label className="flex items-start gap-2.5 p-3 rounded-xl bg-white/[0.03] border border-white/10 hover:border-white/20 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={deleteForce}
+                  onChange={(e) => setDeleteForce(e.target.checked)}
+                  className="mt-0.5 rounded border-white/20 bg-slate-900 text-rose-600 focus:ring-rose-500 cursor-pointer"
+                />
+                <div className="text-[11px]">
+                  <span className="font-bold text-gray-200 block">فك ارتباط المهام المسندة تلقائياً</span>
+                  <span className="text-gray-400 block mt-0.5">
+                    في حال وجود مهام مسندة للموظف، سيتم تحويلها إلى (بدون تعيين) لتجنب فقدان مسار العمل أو تعطيل الحذف.
+                  </span>
+                </div>
+              </label>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row items-center justify-end gap-2.5 pt-4 border-t border-white/10">
+              <button
+                type="button"
+                disabled={deleteLoading}
+                onClick={() => setMemberToDelete(null)}
+                className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 font-bold text-gray-300 transition-colors text-xs cursor-pointer disabled:opacity-50"
+              >
+                إلغاء
+              </button>
+
+              {memberToDelete.is_active !== false && (
+                <button
+                  type="button"
+                  disabled={deleteLoading}
+                  onClick={handleDeactivateInstead}
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 font-bold transition-all text-xs cursor-pointer disabled:opacity-50"
+                >
+                  تعطيل الحساب بدلاً من الحذف
+                </button>
+              )}
+
+              <button
+                type="button"
+                disabled={deleteLoading}
+                onClick={handleConfirmDelete}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-bold text-xs shadow-lg shadow-rose-900/30 transition-all cursor-pointer disabled:opacity-50 active:scale-95"
+              >
+                {deleteLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>جاري الحذف...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    <span>تأكيد الحذف النهائي</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* Floating Notification Toast */}
+      {notificationMsg && (
+        <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-5 py-3 rounded-2xl shadow-2xl border text-xs font-bold animate-fadeIn backdrop-blur-md ${
+          notificationMsg.type === 'success' 
+            ? 'bg-emerald-950/90 border-emerald-500/40 text-emerald-200' 
+            : 'bg-rose-950/90 border-rose-500/40 text-rose-200'
+        }`}>
+          {notificationMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <AlertTriangle className="w-4 h-4 text-rose-400" />}
+          <span>{notificationMsg.text}</span>
         </div>
       )}
 

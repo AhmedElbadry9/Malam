@@ -139,8 +139,9 @@ export async function changeUserPassword(memberId: number, newPassword: string):
   }
 }
 
-export async function deleteTeamMember(memberId: number): Promise<void> {
-  const res = await fetch(`${API_BASE}/members/${memberId}`, {
+export async function deleteTeamMember(memberId: number, force: boolean = true): Promise<void> {
+  const url = `${API_BASE}/members/${memberId}${force ? '?force=true' : ''}`;
+  const res = await fetch(url, {
     method: 'DELETE'
   });
 

@@ -106,7 +106,7 @@ def update_member(db: Session, member_id: int, member_in: schemas.TeamMemberUpda
     db.refresh(member)
     return member
 
-def delete_member(db: Session, member_id: int, current_user: Optional[models.TeamMember] = None):
+def delete_member(db: Session, member_id: int, current_user: Optional[models.TeamMember] = None, force: bool = False):
     member = db.query(models.TeamMember).filter(models.TeamMember.id == member_id).first()
     if not member:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="الموظف غير موجود")
@@ -120,11 +120,16 @@ def delete_member(db: Session, member_id: int, current_user: Optional[models.Tea
             )
 
     tasks_count = db.query(models.TaskStage).filter(models.TaskStage.assigned_member_id == member_id).count()
-    if tasks_count > 0:
+    if tasks_count > 0 and not force:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"لا يمكن حذف الموظف لوجود {tasks_count} مهام مسندة إليه. يرجى إعادة تعيينها أو تعطيل الحساب بدلاً من الحذف."
+            detail=f"لا يمكن حذف الموظف لوجود {tasks_count} مهام مسندة إليه. يرجى إعادة تعيينها أو تفعيل خيار فك الارتباط والحذف."
         )
+
+    # Safely decouple any references in TaskStage so deletion never fails with FK constraint
+    db.query(models.TaskStage).filter(models.TaskStage.assigned_member_id == member_id).update({"assigned_member_id": None})
+    db.query(models.TaskStage).filter(models.TaskStage.reviewer_id == member_id).update({"reviewer_id": None})
+    db.query(models.TaskStage).filter(models.TaskStage.assigned_by_id == member_id).update({"assigned_by_id": None})
 
     db.delete(member)
     db.commit()

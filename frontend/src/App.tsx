@@ -132,8 +132,8 @@ function MainApp() {
     await loadData();
   };
 
-  const handleDeleteMember = async (memberId: number) => {
-    await deleteTeamMember(memberId);
+  const handleDeleteMember = async (memberId: number, force: boolean = true) => {
+    await deleteTeamMember(memberId, force);
     await loadData();
   };
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, User, Lock, AlertCircle, Sparkles, Eye, EyeOff, Crown, Target, Briefcase, Award } from 'lucide-react';
+import { ArrowLeft, User, Lock, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import type { TeamMember } from '../types';
 import malamLogo from '../assets/malam-logo.png';
 
@@ -17,7 +17,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedRole, setSelectedRole] = useState<string>('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,57 +39,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       setLoading(false);
     }
   };
-
-  const handleQuickLogin = async (u: string, p: string = '123', roleKey: string) => {
-    setUsername(u);
-    setPassword(p);
-    setSelectedRole(roleKey);
-    setError(null);
-    try {
-      setLoading(true);
-      const res = await onLoginSubmit(u, p);
-      onLoginSuccess(res.user_type, res.member);
-    } catch (err: any) {
-      setError(err.message || 'اسم المستخدم أو كلمة المرور غير صحيحة');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const demoRoles = [
-    {
-      key: 'admin',
-      user: 'admin',
-      title: 'مدير النظام',
-      sub: 'Admin (صلاحيات كاملة)',
-      icon: Crown,
-      color: 'from-amber-500/20 to-orange-500/20 text-amber-300 border-amber-500/30'
-    },
-    {
-      key: 'manager',
-      user: 'manager',
-      title: 'مدير المشاريع',
-      sub: 'Manager (متابعة العمليات)',
-      icon: Target,
-      color: 'from-indigo-500/20 to-blue-500/20 text-indigo-300 border-indigo-500/30'
-    },
-    {
-      key: 'head',
-      user: 'head',
-      title: 'رئيس القسم',
-      sub: 'Head (توزيع واعتماد المهام)',
-      icon: Award,
-      color: 'from-teal-500/20 to-emerald-500/20 text-teal-300 border-teal-500/30'
-    },
-    {
-      key: 'sara',
-      user: 'sara',
-      title: 'موظف تنفيذي',
-      sub: 'Employee (تنفيذ وتسليم)',
-      icon: Briefcase,
-      color: 'from-slate-500/20 to-zinc-500/20 text-slate-300 border-slate-500/30'
-    }
-  ];
 
   return (
     <div className="min-h-screen bg-[#07090e] flex items-center justify-center p-4 selection:bg-orange-500 selection:text-white relative overflow-hidden">
@@ -147,10 +95,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   type="text"
                   required
                   value={username}
-                  onChange={(e) => {
-                    setUsername(e.target.value);
-                    setSelectedRole('');
-                  }}
+                  onChange={(e) => setUsername(e.target.value)}
                   placeholder="اسم المستخدم أو البريد الألكتروني"
                   className="w-full pr-11 pl-4 py-3 rounded-xl bg-slate-900/60 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-orange-500/60 focus:bg-slate-900/90 focus:ring-2 focus:ring-orange-500/20 transition-all font-sans"
                 />
@@ -206,42 +151,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             </button>
 
           </form>
-
-          {/* Quick Demo Accounts Selection */}
-          <div className="mt-7 pt-6 border-t border-white/10">
-            <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-gray-400 mb-3.5">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>تسجيل دخول سريع للتجربة (كلمة المرور: 123)</span>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2">
-              {demoRoles.map((role) => {
-                 const IconComponent = role.icon;
-                 const isSelected = selectedRole === role.key || username === role.user;
-                 return (
-                   <button
-                     key={role.key}
-                     type="button"
-                     disabled={loading}
-                     onClick={() => handleQuickLogin(role.user, '123', role.key)}
-                     className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-right transition-all cursor-pointer ${
-                       isSelected 
-                         ? 'bg-gradient-to-r ' + role.color + ' ring-2 ring-white/20 border-white/30 scale-[1.02]' 
-                         : 'bg-white/[0.03] hover:bg-white/[0.08] border-white/5 text-gray-300 hover:border-white/15'
-                     }`}
-                   >
-                     <div className={`p-1.5 rounded-lg shrink-0 ${isSelected ? 'bg-white/15' : 'bg-white/5'}`}>
-                       <IconComponent className="w-3.5 h-3.5" />
-                     </div>
-                     <div className="truncate">
-                       <div className="text-xs font-bold text-white truncate">{role.title}</div>
-                       <div className="text-[10px] text-gray-400 font-mono truncate">{role.sub}</div>
-                     </div>
-                   </button>
-                 );
-               })}
-            </div>
-          </div>
 
         </div>
 

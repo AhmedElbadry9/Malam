@@ -174,12 +174,14 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
   // Open the unified dispatch modal
   const handleOpenDispatch = (client: Client, stage: TaskStage) => {
     setSelectedTaskForDispatch({ client, stage });
-    setDispatchModalTab('info');
-    if (stage.assigned_member_id) {
+    // Open directly on 'assign' tab so the Head can immediately assign/direct without confusion
+    setDispatchModalTab('assign');
+    // Pre-select only if it is already assigned to a specific team employee.
+    // If it's unassigned or assigned to head, keep it empty ('') so the Head intentionally chooses!
+    if (stage.assigned_member_id && stage.assigned_member_id !== currentMember.id) {
       setDispatchMemberId(stage.assigned_member_id);
     } else {
-      const defaultEmp = deptMembers.find(m => m.id !== currentMember.id);
-      setDispatchMemberId(defaultEmp ? defaultEmp.id : '');
+      setDispatchMemberId('');
     }
     setDispatchInstructions(stage.head_instructions || '');
     setDispatchSuccessMsg(null);
@@ -222,7 +224,7 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
       const assignedMem = members.find(m => m.id === newMemberId);
       const isSelf = newMemberId === currentMember.id;
       const successText = isSelf
-        ? 'تم إسناد المهمة لنفسك بنجاح! تم نقلك لتبويب "مهامي المسندة لي شخصياً" للبدء 🚀'
+        ? 'تم إسناد المهمة لنفسك بنجاح! يمكنك البدء بتنفيذها متى شئت من تبويب "مهامي المسندة لي شخصياً" 🚀'
         : (assignedMem 
           ? `تم إسناد المهمة وإرسال التوجيهات إلى ${assignedMem.name} بنجاح! 🚀`
           : 'تم حفظ وتحديث بيانات المهمة بنجاح!');
@@ -230,14 +232,11 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
       setDispatchSuccessMsg(successText);
       confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
 
-      // Automatically close modal and switch tab if self-assigned
+      // Close modal smoothly after feedback without forcing tab change
       setTimeout(() => {
         setSelectedTaskForDispatch(null);
         setDispatchSuccessMsg(null);
-        if (isSelf) {
-          setActiveTab('my_tasks');
-        }
-      }, 1200);
+      }, 1400);
 
     } catch (err) {
       console.error(err);
@@ -1413,7 +1412,7 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                         onChange={(e) => setDispatchMemberId(e.target.value ? Number(e.target.value) : '')}
                         className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-teal-500 focus:ring-1 focus:ring-teal-500/40 text-white font-bold text-xs cursor-pointer outline-none transition-colors"
                       >
-                        <option value="" disabled>— اختر الموظف المنفذ من فريقك —</option>
+                        <option value="" disabled>— اضغط لاختيار الموظف المنفذ من فريقك —</option>
                         
                         {/* Option to assign to Head directly */}
                         <option value={currentMember.id} className="font-bold text-indigo-400 bg-indigo-950/40">
@@ -1676,13 +1675,19 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                     disabled={!dispatchMemberId || isSubmittingDispatch}
                     loading={isSubmittingDispatch}
                     icon={<Send className="w-3.5 h-3.5" />}
-                    className="bg-teal-600 hover:bg-teal-500 text-white font-black shadow-lg shadow-teal-900/30 px-5"
+                    className={`font-black shadow-lg px-5 ${
+                      !dispatchMemberId
+                        ? 'opacity-60 cursor-not-allowed bg-slate-800 text-slate-400'
+                        : 'bg-teal-600 hover:bg-teal-500 text-white shadow-teal-900/30'
+                    }`}
                   >
-                    {dispatchMemberId === currentMember.id
-                      ? 'تأكيد إسناد المهمة لي شخصياً والبدء'
-                      : (selectedTaskForDispatch.stage.assigned_member_id 
-                        ? 'حفظ وتحديث التكليف' 
-                        : 'إرسال وتكليف المهمة')}
+                    {!dispatchMemberId
+                      ? 'يرجى اختيار الموظف أولاً'
+                      : dispatchMemberId === currentMember.id
+                        ? '⭐ تأكيد إسناد المهمة لي شخصياً والبدء'
+                        : (selectedTaskForDispatch.stage.assigned_member_id 
+                          ? 'حفظ وتحديث التكليف' 
+                          : 'إرسال وتكليف المهمة للموظف')}
                   </Button>
                 )}
               </div>

@@ -62,6 +62,7 @@ yarn-error.log*
 
 # Logs & Temporary files
 *.log
+*.mp4
 scratch/
 .system_generated/
 .DS_Store

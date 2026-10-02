@@ -210,7 +210,7 @@ class AuditLog(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     client_id = Column(Integer, ForeignKey("clients.id"), nullable=True, index=True)
-    stage_id = Column(Integer, ForeignKey("task_stages.id"), nullable=True, index=True)
+    stage_id = Column(Integer, ForeignKey("task_stages.id", ondelete="SET NULL"), nullable=True, index=True)
     action = Column(String, nullable=False, index=True)
     performed_by = Column(String, nullable=False)
     timestamp = Column(DateTime, default=_utc_now)

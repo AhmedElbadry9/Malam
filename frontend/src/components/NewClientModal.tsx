@@ -19,7 +19,7 @@ import { PriorityBadge } from './ui/PriorityBadge';
 interface DepartmentTaskGroup {
   id: string;
   department_id: number;
-  assigned_member_id: number;
+  assigned_member_id: number | null;
   selected_services: string[];
   custom_tasks: string[];
   new_custom_input: string;
@@ -183,40 +183,15 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
     { id: '1', email: '', role: 'reader' } // Default to reader (مشاهد) for deliverables
   ]);
 
-  // Helper to find the actual Head or Employee of a specific department
-  const findProperAssigneeForDept = (deptId: number, memberList: TeamMember[]): TeamMember | undefined => {
-    // 1. Strictly look for Head of this department
-    const headMem = memberList.find(m => 
-      m.role_type === 'head' && 
-      (m.department_id === deptId || m.department_ids?.includes(deptId))
-    );
-    if (headMem) return headMem;
-
-    // 2. Otherwise look for an employee in this department
-    const deptEmp = memberList.find(m => 
-      m.role_type === 'employee' && 
-      (m.department_id === deptId || m.department_ids?.includes(deptId))
-    );
-    if (deptEmp) return deptEmp;
-
-    // 3. Fallback: non-admin member
-    const otherNonAdmin = memberList.find(m => 
-      m.role_type !== 'admin' && m.role_type !== 'super_admin' && m.role_type !== 'manager' &&
-      (m.department_id === deptId || m.department_ids?.includes(deptId))
-    );
-    return otherNonAdmin || memberList[0];
-  };
-
   // Groups
   const [groups, setGroups] = useState<DepartmentTaskGroup[]>(() => {
     const firstDept = departments[0];
     const deptId = firstDept ? firstDept.id : 1;
-    const firstMem = findProperAssigneeForDept(deptId, members);
     return [
       {
         id: Math.random().toString(36).substring(2, 9),
         department_id: deptId,
-        assigned_member_id: firstMem ? firstMem.id : 1,
+        assigned_member_id: null,
         selected_services: firstDept?.services && firstDept.services.length > 0 ? [firstDept.services[0]] : [],
         custom_tasks: [],
         new_custom_input: '',
@@ -231,14 +206,12 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
   useEffect(() => {
     if (departments.length > 0 && members.length > 0) {
       setGroups(prev => prev.map(g => {
-        const curMem = members.find(m => m.id === g.assigned_member_id);
-        // If current assigned member is missing, or is Admin/Manager, reassign to the proper department head
-        if (!curMem || curMem.role_type === 'admin' || curMem.role_type === 'manager' || curMem.role_type === 'super_admin') {
-          const properMem = findProperAssigneeForDept(g.department_id, members);
-          if (properMem) {
+        if (g.assigned_member_id) {
+          const curMem = members.find(m => m.id === g.assigned_member_id);
+          if (!curMem || curMem.role_type === 'admin' || curMem.role_type === 'manager' || curMem.role_type === 'super_admin') {
             return {
               ...g,
-              assigned_member_id: properMem.id
+              assigned_member_id: null
             };
           }
         }
@@ -287,14 +260,13 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
 
   const handleDepartmentChange = (groupId: string, deptId: number) => {
     const dept = departments.find(d => d.id === deptId);
-    const properMem = findProperAssigneeForDept(deptId, members);
 
     setGroups(prev => prev.map(g => {
       if (g.id !== groupId) return g;
       return {
         ...g,
         department_id: deptId,
-        assigned_member_id: properMem ? properMem.id : g.assigned_member_id,
+        assigned_member_id: null,
         selected_services: dept?.services && dept.services.length > 0 ? [dept.services[0]] : [],
         custom_tasks: [],
         new_custom_input: '',
@@ -307,14 +279,13 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
   const handleAddDepartmentGroup = () => {
     const unusedDept = departments.find(d => !groups.some(g => Number(g.department_id) === Number(d.id))) || departments[0];
     const deptId = unusedDept ? unusedDept.id : 1;
-    const properMem = findProperAssigneeForDept(deptId, members);
 
     // Place the new department at the TOP (beginning of array)
     setGroups(prev => [
       {
         id: Math.random().toString(36).substring(2, 9),
         department_id: deptId,
-        assigned_member_id: properMem ? properMem.id : 1,
+        assigned_member_id: null,
         selected_services: unusedDept?.services && unusedDept.services.length > 0 ? [unusedDept.services[0]] : [],
         custom_tasks: [],
         new_custom_input: '',
@@ -1418,21 +1389,24 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
 
                         return (
                           <Select
-                            label="المكلف بالمهمة (رئيس القسم أو موظف مباشر):"
-                            value={group.assigned_member_id}
+                            label="المكلف بالمهمة (توزيع القسم أو موظف محدد):"
+                            value={group.assigned_member_id !== null && group.assigned_member_id !== undefined ? group.assigned_member_id : ''}
                             onChange={(e) => {
-                              const val = Number(e.target.value);
+                              const val = e.target.value ? Number(e.target.value) : null;
                               setGroups(prev => prev.map(g => g.id === group.id ? { ...g, assigned_member_id: val } : g));
                             }}
                           >
+                            <option value="">
+                              ⏳ بانتظار التوزيع (يترك لرئيس القسم لتوزيع المهمة)
+                            </option>
                             {curDeptHead && (
-                              <optgroup label={`⭐ رئيس قسم ${curDept?.name_ar || ''} (يستلمها لتوزيعها لاحقاً):`}>
+                              <optgroup label={`⭐ رئيس قسم ${curDept?.name_ar || ''} (تكليف شخصي مباشر):`}>
                                 <option value={curDeptHead.id}>
-                                  👑 {curDeptHead.name} (رئيس القسم - Head)
+                                  👑 {curDeptHead.name} (رئيس القسم - تنفيذ شخصي)
                                 </option>
                               </optgroup>
                             )}
-                            <optgroup label={`👤 موظفو ${curDept?.name_ar || 'هذا القسم'} (إسناد مباشر):`}>
+                            <optgroup label={`👤 موظفو ${curDept?.name_ar || 'هذا القسم'} (إسناد مباشر لموظف):`}>
                               {deptEmployees.length > 0 ? (
                                 deptEmployees.map(m => (
                                   <option key={m.id} value={m.id}>
@@ -1668,7 +1642,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
                   return (
                     <li key={idx} className="flex items-center justify-between p-2 rounded-lg bg-slate-950/60 border border-slate-800">
                       <span className="font-bold text-white">{curDept?.name_ar}: {tasksCount} مهام</span>
-                      <span className="text-slate-400">المكلف: {mem?.name || 'غير محدد'}</span>
+                      <span className="text-slate-400">المكلف: {mem ? mem.name : '⏳ بانتظار توزيع رئيس القسم'}</span>
                     </li>
                   );
                 })}

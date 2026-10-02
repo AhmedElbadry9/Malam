@@ -264,3 +264,43 @@ def test_client_sheet_inside_subfolder_with_11_columns(client):
     assert raw["platform_theme"] == "زد"
 
 
+def test_delete_stage_with_audit_logs(client):
+    # 1. Create a client with a task stage
+    res = client.post("/api/clients/intake", json={
+        "name": "عميل تجربة الحذف",
+        "company_name": "مؤسسة الحذف الآمن",
+        "service_type": "تسويق",
+        "priority": "low",
+        "assignments": [
+            {
+                "department_id": 1,
+                "assigned_member_id": 1,
+                "stage_name": "مهمة أولى للتجربة",
+                "description": "وصف المهمة الأولى"
+            }
+        ]
+    })
+    assert res.status_code == 201
+    cid = res.json()["id"]
+    stage_id = res.json()["stages"][0]["id"]
+
+    # 2. Perform updates and reviews to generate audit logs tied to this stage
+    update_res = client.put(f"/api/clients/{cid}/assignments/{stage_id}", json={
+        "stage_name": "مهمة تم تحديثها"
+    })
+    assert update_res.status_code == 200
+
+    # 3. Delete the stage and verify it succeeds
+    del_res = client.delete(f"/api/clients/{cid}/assignments/{stage_id}")
+    assert del_res.status_code == 200
+    assert del_res.json()["message"] == "تم حذف المرحلة بنجاح."
+
+    # 4. Verify client stages are empty and progress recalculated
+    client_res = client.get("/api/clients")
+    assert client_res.status_code == 200
+    created_client = next(c for c in client_res.json() if c["id"] == cid)
+    assert len(created_client["stages"]) == 0
+    assert created_client["progress_percentage"] == 0
+
+
+

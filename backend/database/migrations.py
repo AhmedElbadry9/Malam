@@ -66,6 +66,27 @@ def run_migrations():
                     conn.execute(text("ALTER TABLE team_members ADD COLUMN role_type VARCHAR DEFAULT 'employee'"))
                 conn.commit()
 
+            # 5. audit_logs foreign key update for PostgreSQL (ON DELETE SET NULL)
+            if "audit_logs" in tables:
+                try:
+                    conn.execute(text("""
+                        DO $$
+                        BEGIN
+                            IF EXISTS (
+                                SELECT 1 FROM information_schema.table_constraints 
+                                WHERE constraint_name = 'audit_logs_stage_id_fkey'
+                            ) THEN
+                                ALTER TABLE audit_logs DROP CONSTRAINT audit_logs_stage_id_fkey;
+                                ALTER TABLE audit_logs ADD CONSTRAINT audit_logs_stage_id_fkey 
+                                    FOREIGN KEY (stage_id) REFERENCES task_stages(id) ON DELETE SET NULL;
+                            END IF;
+                        END $$;
+                    """))
+                    conn.commit()
+                except Exception as e:
+                    # SQLite does not support this DDL syntax; safely ignore
+                    pass
+
         except Exception as e:
             print(f"Migration execution notice: {e}")
 

@@ -37,6 +37,10 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeletingClient, setIsDeletingClient] = useState(false);
 
+  // Stage delete confirmation state
+  const [stageToDelete, setStageToDelete] = useState<TaskStage | null>(null);
+  const [isDeletingStage, setIsDeletingStage] = useState(false);
+
   const handleConfirmDeleteClient = async () => {
     if (!onDeleteClient) return;
     try {
@@ -212,15 +216,20 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
     }
   };
 
-  const handleDeleteStage = async (stage: TaskStage) => {
-    if (!window.confirm('هل أنت متأكد من حذف هذه المهمة من مسار العميل؟')) return;
-    setStages(prev => prev.filter(s => s.id !== stage.id));
+  const handleConfirmDeleteStage = async () => {
+    if (!stageToDelete) return;
+    const stageId = stageToDelete.id;
+    const stageName = stageToDelete.stage_name;
     try {
-      await onDeleteAssignment(client.id, stage.id);
-      setSuccessMsg('✅ تم حذف المهمة بنجاح!');
+      setIsDeletingStage(true);
+      await onDeleteAssignment(client.id, stageId);
+      setStages(prev => prev.filter(s => s.id !== stageId));
+      setSuccessMsg(`✅ تم حذف مهمة (${stageName}) بنجاح!`);
+      setStageToDelete(null);
     } catch (err: any) {
-      setStages(client.stages || []);
-      alert(err.message || 'فشل الحذف');
+      alert(err.message || 'فشل حذف المهمة');
+    } finally {
+      setIsDeletingStage(false);
     }
   };
 
@@ -808,12 +817,12 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
                       })()}
 
                       <button
-                        onClick={() => handleDeleteStage(stage)}
+                        onClick={() => setStageToDelete(stage)}
                         disabled={stage.status === 'completed'}
                         className={`p-1.5 rounded-lg transition-colors ${
                           stage.status === 'completed'
                             ? 'text-gray-700 cursor-not-allowed'
-                            : 'text-gray-500 hover:text-rose-400 hover:bg-rose-500/10'
+                            : 'text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 cursor-pointer'
                         }`}
                         title={stage.status === 'completed' ? 'لا يمكن حذف مهمة مكتملة' : 'حذف المهمة'}
                       >
@@ -904,6 +913,46 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
                 icon={<Trash2 className="w-4 h-4" />}
               >
                 تأكيد الحذف نهائياً
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+      {/* Confirmation Modal for Task Stage Deletion */}
+      {stageToDelete && (
+        <Modal
+          isOpen={true}
+          onClose={() => !isDeletingStage && setStageToDelete(null)}
+          title="تأكيد حذف المهمة من مسار العميل"
+        >
+          <div className="space-y-4">
+            <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold text-sm text-white mb-1">
+                  هل أنت متأكد من رغبتك في حذف مهمة: &quot;{stageToDelete.stage_name}&quot;؟
+                </p>
+                <p className="leading-relaxed text-gray-300">
+                  سيتم حذف هذه المهمة نهائياً من خطة ومسار عمل العميل، وإعادة احتساب نسبة الإنجاز تلقائياً.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <Button
+                variant="secondary"
+                onClick={() => setStageToDelete(null)}
+                disabled={isDeletingStage}
+              >
+                إلغاء
+              </Button>
+              <Button
+                variant="danger"
+                onClick={handleConfirmDeleteStage}
+                loading={isDeletingStage}
+                icon={<Trash2 className="w-4 h-4" />}
+              >
+                تأكيد حذف المهمة
               </Button>
             </div>
           </div>

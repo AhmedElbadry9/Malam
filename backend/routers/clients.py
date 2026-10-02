@@ -84,11 +84,16 @@ def update_assignment(
     return task_service.update_task_stage(db, client_id, stage_id, stage_in, current_user=current_user)
 
 @router.delete("/{client_id}/assignments/{stage_id}")
-def delete_assignment(client_id: int, stage_id: int, db: Session = Depends(get_db)):
+def delete_assignment(
+    client_id: int, 
+    stage_id: int, 
+    db: Session = Depends(get_db),
+    current_user: Optional[models.TeamMember] = Depends(get_current_user)
+):
     """
     حذف مرحلة من مراحل العميل.
     """
-    return task_service.delete_task_stage(db, client_id, stage_id)
+    return task_service.delete_task_stage(db, client_id, stage_id, current_user=current_user)
 
 @router.get("/{client_id}/brief-sheet")
 def get_client_brief_sheet(client_id: int, db: Session = Depends(get_db)):

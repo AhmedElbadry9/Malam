@@ -261,8 +261,8 @@ export async function deleteClientAssignment(clientId: number, stageId: number):
   });
 
   if (!res.ok) {
-    const errData = await res.json().catch(() => ({ detail: 'فشل حذف الإسناد' }));
-    throw new Error(errData.detail || 'فشل حذف الإسناد');
+    const errorMsg = await parseApiError(res, 'فشل حذف المهمة من مسار العميل');
+    throw new Error(errorMsg);
   }
 }
 

@@ -269,7 +269,7 @@ def update_task_stage(db: Session, client_id: int, stage_id: int, stage_in: sche
     return stage
 
 
-def delete_task_stage(db: Session, client_id: int, stage_id: int):
+def delete_task_stage(db: Session, client_id: int, stage_id: int, current_user: Optional[models.TeamMember] = None):
     stage = db.query(models.TaskStage).filter(
         models.TaskStage.id == stage_id,
         models.TaskStage.client_id == client_id
@@ -279,20 +279,40 @@ def delete_task_stage(db: Session, client_id: int, stage_id: int):
 
     stage_name = stage.stage_name
     stage_id_val = stage.id
+    assigned_member_id = stage.assigned_member_id
+    client = stage.client
+    performer_name = current_user.name if current_user else "System Admin"
+
+    # Safely decouple any existing audit logs referencing this stage so foreign key constraints are not violated
+    db.query(models.AuditLog).filter(models.AuditLog.stage_id == stage_id_val).update(
+        {"stage_id": None},
+        synchronize_session=False
+    )
+    db.flush()
+
     db.delete(stage)
+    db.flush()
 
     # Recalculate client progress after stage deletion
     _recalculate_client_progress(db, client_id)
 
+    # Record deletion in audit log (stage_id is set to None because the task stage was deleted)
     audit = models.AuditLog(
         client_id=client_id,
-        stage_id=stage_id_val,
+        stage_id=None,
         action="STAGE_DELETED",
-        performed_by="System Admin",
+        performed_by=performer_name,
         timestamp=datetime.now(),
         details=f"تم حذف مرحلة ({stage_name})."
     )
     db.add(audit)
+
+    # Safely revoke drive permission if the member has no remaining active stages
+    try:
+        if assigned_member_id and client:
+            _sync_member_drive_access(db, client, assigned_member_id, "revoke", exclude_stage_id=stage_id_val)
+    except Exception as drive_err:
+        logger.warning(f"Notice on revoking drive permission during task deletion: {drive_err}")
 
     db.commit()
     return {"message": "تم حذف المرحلة بنجاح."}

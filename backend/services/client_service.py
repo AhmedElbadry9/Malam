@@ -198,7 +198,7 @@ def create_client_intake(db: Session, client_in: schemas.ClientCreate, current_u
                 assigned_by_id=assigned_by,
                 stage_name=stage_in.stage_name.strip(),
                 description=stage_desc,
-                status="in_progress",
+                status="in_progress" if stage_in.assigned_member_id else "pending",
                 order_index=idx
             )
             db.add(stage)

@@ -151,7 +151,7 @@ export interface SystemKPIs {
 
 export interface NewClientAssignment {
   department_id: number;
-  assigned_member_id: number;
+  assigned_member_id?: number | null;
   assigned_by_id?: number;
   stage_name: string;
   description?: string;

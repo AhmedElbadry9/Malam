@@ -14,6 +14,10 @@ class TestUrlAndEmailExtraction:
         ("http://brand-name.co.uk", "brand-name"),
         ("https://sub.domain.company.store/products?ref=123", "company"),
         ("https://my-agency.ae/", "my-agency"),
+        ("face.zid.com", "face.zid"),
+        ("https://vanaurasa.zid.com/", "vanaurasa.zid"),
+        ("store.salla.sa", "store.salla.sa"),
+        ("https://store.salla.sa/", "store.salla.sa"),
         ("saleh", "saleh"),
         ("", ""),
         ("   ", ""),
@@ -24,6 +28,8 @@ class TestUrlAndEmailExtraction:
     def test_generate_agency_email(self):
         assert generate_agency_email("www.saleh.com") == "info+saleh@malamsa.com"
         assert generate_agency_email("https://company.sa") == "info+company@malamsa.com"
+        assert generate_agency_email("face.zid.com") == "info+face.zid@malamsa.com"
+        assert generate_agency_email("store.salla.sa") == "info+store.salla.sa@malamsa.com"
         assert generate_agency_email("") == ""
         assert generate_agency_email("   ") == ""
 

@@ -24,7 +24,22 @@ def extract_brand_from_url(url: str) -> str:
     clean = url.strip().lower()
     clean = re.sub(r"^https?://", "", clean)
     clean = clean.split("/")[0].split("?")[0].split("#")[0].split(":")[0]
-    clean = re.sub(r"^www\.", "", clean)
+    # Specific platform subdomains (e.g. face.zid.com -> face.zid and store.salla.sa -> store.salla.sa)
+    if clean.endswith(".zid.com") or clean.endswith(".zid.store"):
+        sub = re.sub(r"\.zid\.(com|store)$", "", clean)
+        sub = re.sub(r"[^a-z0-9_.-]", "", sub)
+        return f"{sub}.zid" if sub else "zid"
+
+    if clean.endswith(".salla.sa"):
+        sub = re.sub(r"\.salla\.sa$", "", clean)
+        sub = re.sub(r"[^a-z0-9_.-]", "", sub)
+        return f"{sub}.salla.sa" if sub else "salla.sa"
+
+    if clean.endswith(".salla.com") or clean.endswith(".salla.store"):
+        sub = re.sub(r"\.salla\.(com|store)$", "", clean)
+        sub = re.sub(r"[^a-z0-9_.-]", "", sub)
+        return f"{sub}.salla" if sub else "salla"
+
     parts = [p for p in clean.split(".") if p]
     if not parts:
         return ""

@@ -29,7 +29,25 @@ export function extractBrandFromUrl(url: string): string {
   }
 
   // Strip path, query, hash
-  clean = clean.split('/')[0].split('?')[0].split('#')[0];
+  clean = clean.split('/')[0].split('?')[0].split('#')[0].split(':')[0];
+
+  // Specific platform subdomains:
+  // face.zid.com -> face.zid
+  if (clean.endsWith('.zid.com') || clean.endsWith('.zid.store')) {
+    const sub = clean.replace(/\.zid\.(com|store)$/, '').replace(/[^a-z0-9_.-]/g, '');
+    return sub ? `${sub}.zid` : 'zid';
+  }
+
+  // store.salla.sa -> store.salla.sa
+  if (clean.endsWith('.salla.sa')) {
+    const sub = clean.replace(/\.salla\.sa$/, '').replace(/[^a-z0-9_.-]/g, '');
+    return sub ? `${sub}.salla.sa` : 'salla.sa';
+  }
+
+  if (clean.endsWith('.salla.com') || clean.endsWith('.salla.store')) {
+    const sub = clean.replace(/\.salla\.(com|store)$/, '').replace(/[^a-z0-9_.-]/g, '');
+    return sub ? `${sub}.salla` : 'salla';
+  }
 
   const parts = clean.split('.').filter(Boolean);
   if (parts.length === 0) return '';

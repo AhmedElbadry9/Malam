@@ -1560,7 +1560,7 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                                   <span>نسخ</span>
                                 </button>
                                 <span className="text-[10px] text-purple-400/80 font-normal">
-                                  (مخصص لرئيس القسم والإدارة فقط)
+                                  (متاح للإدارة ورؤساء الأقسام وفريق البرمجة)
                                 </span>
                               </div>
                             </td>

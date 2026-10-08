@@ -3,7 +3,7 @@ import confetti from 'canvas-confetti';
 import { 
   CheckCircle2, Clock, FolderGit2, Send, Building2,
   AlertTriangle, RotateCcw, ShieldCheck, History, FileText,
-  Globe
+  Globe, Mail, Copy
 } from 'lucide-react';
 import type { Client, TeamMember, TaskStage } from '../types';
 import { Button } from './ui/Button';
@@ -174,6 +174,12 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
                       <Building2 className="w-3.5 h-3.5 text-indigo-400" />
                       <span>{client.company_name}</span>
                     </h3>
+                    {client.agency_email && (
+                      <div className="text-[10px] font-mono font-bold text-purple-300 bg-purple-500/15 px-2 py-0.5 rounded border border-purple-500/30 inline-flex items-center gap-1 mt-1 select-all" title="إيميل الوكالة لربط المتجر">
+                        <Mail className="w-3 h-3 text-purple-400" />
+                        <span>{client.agency_email}</span>
+                      </div>
+                    )}
                     <p className="text-sm font-black text-rose-300 mt-0.5">{stage.stage_name}</p>
                   </div>
                   <StatusBadge status="revision_requested" size="sm" />
@@ -314,6 +320,12 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/20">
                             {client.service_type || 'باقة متكاملة'}
                           </span>
+                          {client.agency_email && (
+                            <div className="text-[10px] font-mono font-bold text-purple-300 bg-purple-500/15 px-2 py-0.5 rounded border border-purple-500/30 inline-flex items-center gap-1 select-all" title="إيميل الوكالة لربط المتجر">
+                              <Mail className="w-3 h-3 text-purple-400" />
+                              <span>{client.agency_email}</span>
+                            </div>
+                          )}
                         </div>
                         <h3 className="text-sm font-bold text-white flex items-center gap-1.5 pt-0.5">
                           <Building2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
@@ -760,6 +772,32 @@ export const EmployeeWorkspace: React.FC<EmployeeWorkspaceProps> = ({
                     <PriorityBadge priority={selectedTaskForDetails.client.priority} />
                   </div>
 
+
+                  {selectedTaskForDetails.client.agency_email && (
+                    <div className="flex items-center justify-between py-1.5 border-b border-slate-850">
+                      <span className="text-slate-400 text-xs flex items-center gap-1.5 font-bold">
+                        <Mail className="w-3.5 h-3.5 text-purple-400" />
+                        <span>إيميل الوكالة (المتجر):</span>
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono text-xs font-bold text-purple-300 bg-purple-500/10 px-2.5 py-0.5 rounded border border-purple-500/25 select-all">
+                          {selectedTaskForDetails.client.agency_email}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(selectedTaskForDetails.client.agency_email!);
+                            alert('تم نسخ إيميل الوكالة بنجاح!');
+                          }}
+                          className="p-1 px-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer flex items-center gap-1 text-[10px]"
+                          title="نسخ الإيميل"
+                        >
+                          <Copy className="w-3 h-3" />
+                          <span>نسخ</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   {selectedTaskForDetails.client.website_url && (
                     <div className="flex items-center justify-between pt-1">

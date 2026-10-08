@@ -496,10 +496,31 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
     }
   };
 
+  const handleSafeClose = () => {
+    if (loading) return;
+    const hasData = Boolean(
+      name.trim() ||
+      companyName.trim() ||
+      phone.trim() ||
+      websiteUrl.trim() ||
+      step > 1
+    );
+
+    if (hasData) {
+      if (window.confirm('هل أنت متأكد من إغلاق النموذج؟ ستفقد البيانات التي قمت بإدخالها.')) {
+        onClose();
+      }
+    } else {
+      onClose();
+    }
+  };
+
   return (
     <Modal
       isOpen={true}
-      onClose={() => !loading && onClose()}
+      onClose={handleSafeClose}
+      closeOnBackdrop={false}
+      closeOnEsc={false}
       maxWidth="3xl"
       title={loading ? 'تجهيز مساحة العمل السحابية' : 'تسجيل عميل جديد وتوزيع المهام'}
       description={
@@ -531,7 +552,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={onClose}
+                onClick={handleSafeClose}
                 disabled={loading}
               >
                 إلغاء

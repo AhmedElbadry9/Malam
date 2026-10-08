@@ -48,13 +48,61 @@ function MainApp() {
   const [selectedBriefClient, setSelectedBriefClient] = useState<Client | null>(null);
   const [selectedHistoryStage, setSelectedHistoryStage] = useState<{ stage: TaskStage; client?: Client } | null>(null);
 
-  // Completely strip sensitive agency email away from regular employees
+  // Check if current employee belongs to the programming / development department
+  const isDevEmployee = useMemo(() => {
+    if (!currentUser?.member) return false;
+    const mem = currentUser.member;
+    const roleText = (mem.role || '').toLowerCase();
+    if (
+      roleText.includes('برمج') || 
+      roleText.includes('مطور') || 
+      roleText.includes('web') || 
+      roleText.includes('developer') || 
+      roleText.includes('software') || 
+      roleText.includes('front-end') || 
+      roleText.includes('frontend')
+    ) {
+      return true;
+    }
+
+    const memberDeptIds = new Set<number>();
+    if (mem.department_id) memberDeptIds.add(Number(mem.department_id));
+    if (mem.department_ids) mem.department_ids.forEach(id => memberDeptIds.add(Number(id)));
+    if (mem.department?.id) memberDeptIds.add(Number(mem.department.id));
+    if (mem.departments) mem.departments.forEach(d => memberDeptIds.add(Number(d.id)));
+
+    for (const deptId of memberDeptIds) {
+      const dept = departments.find(d => Number(d.id) === deptId) || 
+                   (mem.department && Number(mem.department.id) === deptId ? mem.department : undefined) || 
+                   mem.departments?.find(d => Number(d.id) === deptId);
+      if (dept) {
+        const code = (dept.code || '').toLowerCase();
+        const nameAr = (dept.name_ar || '').toLowerCase();
+        const nameEn = (dept.name_en || '').toLowerCase();
+        if (
+          code.includes('dev') || 
+          code.includes('prog') || 
+          nameAr.includes('برمج') || 
+          nameEn.includes('dev') || 
+          nameEn.includes('programming')
+        ) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }, [currentUser, departments]);
+
+  // Strip sensitive agency email from regular employees, EXCEPT programming department
   const sanitizedClientsForEmployee = useMemo(() => {
+    if (isDevEmployee) {
+      return clients;
+    }
     return clients.map(c => ({
       ...c,
       agency_email: undefined
     }));
-  }, [clients]);
+  }, [clients, isDevEmployee]);
 
   const loadData = async () => {
     try {

@@ -88,7 +88,7 @@ export const Modal: React.FC<ModalProps> = ({
             <button
               onClick={onClose}
               className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
-              title="إغلاق (Esc)"
+              title={closeOnEsc ? "إغلاق (Esc)" : "إغلاق"}
               aria-label="إغلاق"
             >
               <X className="w-5 h-5" />

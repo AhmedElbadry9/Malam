@@ -53,9 +53,9 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
     });
   }
 
-  // Selected Department Filter (if Head manages multiple departments)
+  // Selected Department Filter (defaults to 'all' for multi-department heads so all tasks are visible immediately)
   const [selectedDeptFilter, setSelectedDeptFilter] = useState<number | 'all'>(
-    memberDeptIds.length === 1 ? memberDeptIds[0] : (memberDeptIds.length > 0 ? memberDeptIds[0] : 'all')
+    memberDeptIds.length === 1 ? memberDeptIds[0] : 'all'
   );
 
   const [activeTab, setActiveTab] = useState<'dispatch' | 'my_tasks' | 'review' | 'team' | 'completed'>('dispatch');
@@ -312,6 +312,16 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
   };
 
   const headDepts = departments.filter(d => memberDeptIds.includes(d.id));
+
+  // All team members under this Head across all their managed departments (independent of the table filter)
+  const allHeadTeamMembers = members.filter(m => {
+    if (m.role_type === 'admin' || m.role_type === 'super_admin' || m.role_type === 'manager') {
+      return false;
+    }
+    if (m.id === currentMember.id) return false;
+    if (memberDeptIds.length === 0) return true;
+    return memberDeptIds.some(dId => m.department_id === dId || (m.department_ids && m.department_ids.includes(dId)));
+  });
 
   return (
     <div className="space-y-6 animate-fadeIn pb-12">
@@ -1419,14 +1429,39 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
                           ⭐ إسناد المهمة لي شخصياً ({currentMember.name}) — سأقوم بتنفيذها بنفسي
                         </option>
 
-                        {deptMembers.filter(m => m.id !== currentMember.id).length > 0 && (
-                          <optgroup label="موظفو وفريق القسم:">
-                            {deptMembers.filter(m => m.id !== currentMember.id).map(m => (
-                              <option key={m.id} value={m.id}>
-                                {m.name} — {m.role}
-                              </option>
-                            ))}
-                          </optgroup>
+                        {/* Team members grouped by department if Head manages multiple departments */}
+                        {headDepts.length > 1 ? (
+                          <>
+                            {headDepts.map(dept => {
+                              const deptEmployees = allHeadTeamMembers.filter(m => 
+                                m.department_id === dept.id || (m.department_ids && m.department_ids.includes(dept.id))
+                              );
+                              if (deptEmployees.length === 0) return null;
+                              const isTaskDept = selectedTaskForDispatch && selectedTaskForDispatch.stage.department_id === dept.id;
+                              return (
+                                <optgroup 
+                                  key={dept.id} 
+                                  label={`${isTaskDept ? '🎯' : '👥'} فريق ${dept.name_ar}:`}
+                                >
+                                  {deptEmployees.map(m => (
+                                    <option key={m.id} value={m.id}>
+                                      {m.name} — {m.role}
+                                    </option>
+                                  ))}
+                                </optgroup>
+                              );
+                            })}
+                          </>
+                        ) : (
+                          allHeadTeamMembers.length > 0 && (
+                            <optgroup label="موظفو وفريق القسم:">
+                              {allHeadTeamMembers.map(m => (
+                                <option key={m.id} value={m.id}>
+                                  {m.name} — {m.role}
+                                </option>
+                              ))}
+                            </optgroup>
+                          )
                         )}
                       </select>
                     </div>

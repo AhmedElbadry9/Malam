@@ -5,7 +5,7 @@ import {
   Search, ShieldCheck, Building2,
   Layers, Check, RotateCcw,
   Palette, Camera, Code, FileText, Megaphone, Target, Briefcase, Monitor,
-  Plus, ChevronDown, ChevronUp, Edit, AlertTriangle, Info, User, Calendar, Trash2
+  Plus, ChevronDown, ChevronUp, Edit, AlertTriangle, Info, User, Calendar, Trash2, Loader2
 } from 'lucide-react';
 import type { Client, Department, SystemKPIs, TeamMember, TaskStage } from '../types';
 import { EditClientModal } from './EditClientModal';
@@ -174,17 +174,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     return list;
   }, [clients, members]);
 
+  const [approvingStageId, setApprovingStageId] = useState<number | null>(null);
+
   const handleApproveStage = async (stageId: number) => {
-    if (!onReviewTaskStage) return;
+    if (!onReviewTaskStage || approvingStageId === stageId) return;
     try {
+      setApprovingStageId(stageId);
       await onReviewTaskStage(stageId, 'approve');
       confetti({
         particleCount: 70,
         spread: 60,
         origin: { y: 0.6 }
       });
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      alert(e?.message || 'فشل اعتماد المهمة. يرجى مراجعة الاتصال بالخادم والمحاولة مجدداً.');
+    } finally {
+      setApprovingStageId(null);
     }
   };
 
@@ -200,8 +206,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       await onReviewTaskStage(selectedStageForRevision.stage.id, 'request_revision', revisionNotes);
       setSelectedStageForRevision(null);
       setRevisionNotes('');
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      alert(e?.message || 'فشل إرسال طلب التعديل. يرجى مراجعة الاتصال بالخادم والمحاولة مجدداً.');
     } finally {
       setIsSubmittingRevision(false);
     }
@@ -343,11 +350,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <Button
                         size="sm"
                         variant="primary"
-                        className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-1.5"
-                        icon={<Check className="w-3.5 h-3.5" />}
+                        disabled={approvingStageId === stage.id}
+                        className="flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white font-bold text-xs py-1.5"
+                        icon={approvingStageId === stage.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                         onClick={() => handleApproveStage(stage.id)}
                       >
-                        اعتماد فوري
+                        {approvingStageId === stage.id ? 'جاري الاعتماد...' : 'اعتماد فوري'}
                       </Button>
                       <Button
                         size="sm"
@@ -605,11 +613,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <Button
                       variant="success"
                       size="sm"
-                      icon={<Check className="w-3.5 h-3.5" />}
-                      className="flex-1"
+                      disabled={approvingStageId === stage.id}
+                      icon={approvingStageId === stage.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                      className="flex-1 disabled:opacity-60"
                       onClick={() => handleApproveStage(stage.id)}
                     >
-                      اعتماد
+                      {approvingStageId === stage.id ? 'جاري الاعتماد...' : 'اعتماد'}
                     </Button>
                     <Button
                       variant="outline"
@@ -1111,10 +1120,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                                 <div className="flex items-center gap-1">
                                                   <button
                                                     type="button"
+                                                    disabled={approvingStageId === stage.id}
                                                     onClick={() => handleApproveStage(stage.id)}
-                                                    className="px-2 py-0.5 rounded bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-[10px] cursor-pointer"
+                                                    className="px-2 py-0.5 rounded bg-emerald-500 hover:bg-emerald-400 disabled:opacity-60 text-slate-950 font-bold text-[10px] cursor-pointer flex items-center gap-1"
                                                   >
-                                                    اعتماد
+                                                    {approvingStageId === stage.id && <Loader2 className="w-2.5 h-2.5 animate-spin" />}
+                                                    <span>{approvingStageId === stage.id ? 'جاري...' : 'اعتماد'}</span>
                                                   </button>
                                                   <button
                                                     type="button"

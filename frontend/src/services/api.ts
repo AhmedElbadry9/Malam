@@ -308,7 +308,10 @@ export async function reviewTaskStage(
         notes
       }),
     });
-    if (!res.ok) throw new Error(action === 'approve' ? 'فشل اعتماد المهمة' : 'فشل إرسال طلب التعديل');
+    if (!res.ok) {
+      const errorMsg = await parseApiError(res, action === 'approve' ? 'فشل اعتماد المهمة' : 'فشل إرسال طلب التعديل');
+      throw new Error(errorMsg);
+    }
     return await res.json();
   } catch (err) {
     console.error(err);

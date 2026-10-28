@@ -8,8 +8,8 @@ import malamLogo from '../assets/malam-logo.png';
 
 interface NavbarProps {
   currentUser: { type: 'admin' | 'manager' | 'head' | 'employee' | 'super_admin'; member?: TeamMember };
-  activeTab: 'dispatch' | 'team' | 'departments';
-  onTabChange: (tab: 'dispatch' | 'team' | 'departments') => void;
+  activeTab: 'dispatch' | 'team' | 'departments' | 'performance';
+  onTabChange: (tab: 'dispatch' | 'team' | 'departments' | 'performance') => void;
   onLogout: () => void;
   onOpenNewClientModal: () => void;
   onResetData: () => void;
@@ -72,7 +72,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const roleInfo = getRoleDisplay();
   const RoleIcon = roleInfo.icon;
 
-  const handleTabClick = (tab: 'dispatch' | 'team' | 'departments') => {
+  const handleTabClick = (tab: 'dispatch' | 'team' | 'departments' | 'performance') => {
     onTabChange(tab);
     setMobileMenuOpen(false);
   };
@@ -137,6 +137,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Users className="w-4 h-4 shrink-0" />
               <span>فريق العمل</span>
+            </button>
+
+            <button
+              onClick={() => handleTabClick('performance')}
+              className={`flex items-center gap-2.5 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'performance'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/80'
+              }`}
+            >
+              <Award className="w-4 h-4 shrink-0" />
+              <span>أداء الفريق</span>
             </button>
 
             {isAdmin && (
@@ -252,6 +264,18 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <Users className="w-4 h-4" />
             <span>فريق العمل والكوادر</span>
+          </button>
+
+          <button
+            onClick={() => handleTabClick('performance')}
+            className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-bold transition-colors ${
+              activeTab === 'performance'
+                ? 'bg-indigo-600 text-white'
+                : 'text-slate-300 hover:bg-slate-800'
+            }`}
+          >
+            <Award className="w-4 h-4" />
+            <span>أداء وإنتاجية الفريق</span>
           </button>
 
           {isAdmin && (

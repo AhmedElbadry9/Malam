@@ -393,7 +393,10 @@ def review_task_stage(db: Session, req: schemas.TaskReviewRequest) -> models.Tas
         # Revoke Drive permissions if member has no other active tasks for this client
         if stage.assigned_member_id:
             db.flush()
-            _sync_member_drive_access(db, client, stage.assigned_member_id, action="revoke", exclude_stage_id=stage.id)
+            try:
+                _sync_member_drive_access(db, client, stage.assigned_member_id, action="revoke", exclude_stage_id=stage.id)
+            except Exception as drive_err:
+                logger.warning(f"Notice on revoking drive permission during task review: {drive_err}")
 
         audit = models.AuditLog(
             client_id=client.id,

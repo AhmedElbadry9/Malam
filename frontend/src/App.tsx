@@ -10,6 +10,8 @@ import { NewClientModal } from './components/NewClientModal';
 import { DriveFolderModal } from './components/DriveFolderModal';
 import { ClientBriefSheetModal } from './components/ClientBriefSheetModal';
 import { TaskHistoryModal } from './components/TaskHistoryModal';
+import { TeamPerformance } from './components/TeamPerformance';
+import { selectPerformanceMembers } from './utils/teamPerformance';
 import { ToastProvider } from './context/ToastContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { 
@@ -32,7 +34,7 @@ function MainApp() {
     return null;
   });
 
-  const [activeTab, setActiveTab] = useState<'dispatch' | 'team' | 'departments'>('dispatch');
+  const [activeTab, setActiveTab] = useState<'dispatch' | 'team' | 'departments' | 'performance'>('dispatch');
 
   const [clients, setClients] = useState<Client[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -124,9 +126,13 @@ function MainApp() {
         if (prev.member) {
           const found = membersData.find(m => m.id === prev.member?.id);
           if (found) return { ...prev, member: found };
-        } else if (prev.type === 'admin' || prev.type === 'super_admin') {
-          const adminMem = membersData.find(m => m.role_type === 'admin' || m.role_type === 'super_admin');
-          if (adminMem) return { ...prev, member: adminMem };
+        }
+        if (prev.type === 'admin' || prev.type === 'super_admin' || prev.type === 'manager') {
+          const matched = membersData.find(m => m.role_type === prev.type) ||
+                          (prev.type === 'manager' 
+                            ? membersData.find(m => m.role_type === 'manager' || m.username === 'manager') 
+                            : membersData.find(m => m.role_type === 'admin' || m.role_type === 'super_admin'));
+          if (matched) return { ...prev, member: matched };
         }
         return prev;
       });
@@ -242,17 +248,29 @@ function MainApp() {
   };
 
   const handleSubmitForReview = async (stageId: number, note?: string, url?: string) => {
-    if (currentUser?.member) {
-      await submitTaskForReview(stageId, currentUser.member.id, note, url);
-      await loadData();
+    let submitter = currentUser?.member;
+    if (!submitter && members.length > 0) {
+      submitter = members.find(m => m.role_type === currentUser?.type);
     }
+    if (!submitter) {
+      throw new Error('تعذر تحديد هوية الموظف القائم بالتسليم. يرجى تسجيل الدخول مجدداً.');
+    }
+    await submitTaskForReview(stageId, submitter.id, note, url);
+    await loadData();
   };
 
   const handleReviewTaskStage = async (stageId: number, action: 'approve' | 'request_revision', notes?: string) => {
-    if (currentUser?.member) {
-      await reviewTaskStage(stageId, currentUser.member.id, action, notes);
-      await loadData();
+    let reviewer = currentUser?.member;
+    if (!reviewer && members.length > 0) {
+      reviewer = members.find(m => m.role_type === currentUser?.type) ||
+                 (currentUser?.type === 'manager' ? members.find(m => m.role_type === 'manager' || m.username === 'manager') : undefined) ||
+                 members.find(m => m.role_type === 'admin' || m.role_type === 'super_admin');
     }
+    if (!reviewer) {
+      throw new Error('تعذر تحديد هوية المسؤول المعتمد. يرجى تسجيل الدخول مجدداً.');
+    }
+    await reviewTaskStage(stageId, reviewer.id, action, notes);
+    await loadData();
   };
 
   const handleResetData = async () => {
@@ -322,6 +340,12 @@ function MainApp() {
 
     return 0;
   }, [clients, members, currentUser, isHead, isManagement]);
+
+  // Members tracked in the management-wide team performance view
+  const performanceMembers = useMemo(
+    () => selectPerformanceMembers(members, clients),
+    [members, clients]
+  );
 
   // 1. Render Login Screen if unauthenticated
   if (!currentUser) {
@@ -423,6 +447,17 @@ function MainApp() {
                     onCreateDepartment={handleCreateDepartment}
                     onUpdateDepartment={handleUpdateDepartment}
                     onDeleteDepartment={handleDeleteDepartment}
+                  />
+                ) : activeTab === 'performance' ? (
+                  <TeamPerformance
+                    members={performanceMembers}
+                    clients={clients}
+                    departments={departments}
+                    currentMemberId={currentUser.member?.id}
+                    showDepartmentFilter
+                    title="أداء وإنتاجية الفريق"
+                    subtitle="متابعة ما أنجزه كل موظف في أي قسم خلال أي فترة زمنية، وما تبقى عليه"
+                    accent="indigo"
                   />
                 ) : null}
               </>

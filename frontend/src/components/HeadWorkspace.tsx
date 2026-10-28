@@ -18,6 +18,7 @@ import { EmptyState } from './ui/EmptyState';
 import { parseDeliverableUrls } from '../utils/urlHelper';
 import { DeliverablesDisplay } from './DeliverablesDisplay';
 import { DeliverableUrlsInput } from './DeliverableUrlsInput';
+import { TeamPerformance } from './TeamPerformance';
 
 interface HeadWorkspaceProps {
   currentMember: TeamMember;
@@ -257,8 +258,9 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
       });
       setSelectedReviewStage(null);
       setReviewFeedback('');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      alert(err?.message || 'فشل اعتماد المهمة. يرجى مراجعة الاتصال بالخادم والمحاولة مجدداً.');
     } finally {
       setReviewLoading(false);
     }
@@ -274,8 +276,9 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
       await onReviewTaskStage(stageId, 'request_revision', reviewFeedback);
       setSelectedReviewStage(null);
       setReviewFeedback('');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      alert(err?.message || 'فشل إرسال طلب التعديل. يرجى مراجعة الاتصال بالخادم والمحاولة مجدداً.');
     } finally {
       setReviewLoading(false);
     }
@@ -510,7 +513,7 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
             }`}
           >
             <Users className="w-4 h-4" />
-            <span>أعضاء الفريق والضغط</span>
+            <span>أداء وإنتاجية الفريق</span>
           </button>
 
           {/* Tab 5: Completed Tasks & History */}
@@ -952,49 +955,16 @@ export const HeadWorkspace: React.FC<HeadWorkspaceProps> = ({
         </div>
       )}
 
-      {/* 6. Tab Content: Team & Workload */}
+      {/* 6. Tab Content: Team Performance & Workload (period-based) */}
       {activeTab === 'team' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-          {deptMembers.map(member => {
-            const memberAssigned = deptTasks.filter(item => item.stage.assigned_member_id === member.id);
-            const activeCount = memberAssigned.filter(item => item.stage.status !== 'completed').length;
-            const completedCount = memberAssigned.filter(item => item.stage.status === 'completed').length;
-
-            return (
-              <Card key={member.id} className="hover:border-slate-700 transition-colors">
-                <CardBody className="p-4 sm:p-5 space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600/30 to-slate-800 border border-indigo-500/30 flex items-center justify-center font-bold text-xs text-indigo-300 shadow-inner shrink-0 select-none">
-                      {member.name ? (member.name.trim().split(/\s+/).length > 1 ? member.name.trim().split(/\s+/)[0][0] + member.name.trim().split(/\s+/)[1][0] : member.name.slice(0, 2)) : 'م'}
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-sm text-white flex items-center gap-1.5">
-                        <span>{member.name}</span>
-                        {member.id === currentMember.id && (
-                          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-teal-500/20 text-teal-300 border border-teal-500/30">
-                            أنت
-                          </span>
-                        )}
-                      </h4>
-                      <p className="text-[11px] text-slate-400">{member.role}</p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800 text-center">
-                    <div className="bg-slate-950/60 p-2 rounded-lg border border-slate-800/80">
-                      <span className="text-[10px] text-slate-400 block font-medium">مهام نشطة</span>
-                      <span className="text-sm font-black text-amber-400">{activeCount}</span>
-                    </div>
-                    <div className="bg-slate-950/60 p-2 rounded-lg border border-slate-800/80">
-                      <span className="text-[10px] text-slate-400 block font-medium">مهام مكتملة</span>
-                      <span className="text-sm font-black text-emerald-400">{completedCount}</span>
-                    </div>
-                  </div>
-                </CardBody>
-              </Card>
-            );
-          })}
-        </div>
+        <TeamPerformance
+          members={deptMembers}
+          clients={clients}
+          currentMemberId={currentMember.id}
+          title="أداء وإنتاجية فريق القسم"
+          subtitle="ما أنجزه كل موظف خلال الفترة المحددة، وما تبقى عليه حالياً"
+          accent="teal"
+        />
       )}
 
       {/* 5. Tab Content: Completed Tasks Archive & History */}

@@ -4,7 +4,7 @@ import {
   Clock, AlertCircle, Layers, 
   Edit, RefreshCw, Check, 
   ArrowUpRight, Plus, Copy, CheckCheck, Sparkles,
-  Info, ShieldCheck, AlertTriangle, RotateCcw, Trash2, History
+  Info, ShieldCheck, AlertTriangle, RotateCcw, Trash2, History, Loader2
 } from 'lucide-react';
 import type { Client, ClientGroupHierarchy, Department, TeamMember, TaskStage } from '../types';
 import { fetchClientsHierarchy } from '../services/api';
@@ -58,6 +58,20 @@ export const ClientHierarchyTree: React.FC<ClientHierarchyTreeProps> = ({
   const [showTip, setShowTip] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [treeApprovingStageId, setTreeApprovingStageId] = useState<number | null>(null);
+
+  const handleTreeApproveStage = async (stageId: number) => {
+    if (!onReviewTaskStage || treeApprovingStageId === stageId) return;
+    try {
+      setTreeApprovingStageId(stageId);
+      await onReviewTaskStage(stageId, 'approve');
+    } catch (e: any) {
+      console.error(e);
+      alert(e?.message || 'فشل اعتماد المهمة. يرجى مراجعة الاتصال بالخادم والمحاولة مجدداً.');
+    } finally {
+      setTreeApprovingStageId(null);
+    }
+  };
 
   const handleConfirmDelete = async () => {
     if (!deleteTarget || !onDeleteClient) return;
@@ -799,12 +813,17 @@ export const ClientHierarchyTree: React.FC<ClientHierarchyTreeProps> = ({
                                         {stage.status === 'under_review' && onReviewTaskStage && (
                                           <div className="mt-2.5 pt-2 border-t border-white/5 flex items-center gap-2">
                                             <button
-                                              onClick={() => onReviewTaskStage(stage.id, 'approve')}
-                                              className="flex-1 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] flex items-center justify-center gap-1 transition-all cursor-pointer shadow-sm"
+                                              disabled={treeApprovingStageId === stage.id}
+                                              onClick={() => handleTreeApproveStage(stage.id)}
+                                              className="flex-1 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white font-bold text-[11px] flex items-center justify-center gap-1 transition-all cursor-pointer shadow-sm"
                                               title="اعتماد وإنهاء المهمة"
                                             >
-                                              <Check className="w-3 h-3" />
-                                              <span>اعتماد</span>
+                                              {treeApprovingStageId === stage.id ? (
+                                                <Loader2 className="w-3 h-3 animate-spin" />
+                                              ) : (
+                                                <Check className="w-3 h-3" />
+                                              )}
+                                              <span>{treeApprovingStageId === stage.id ? 'جاري الاعتماد...' : 'اعتماد'}</span>
                                             </button>
                                             <button
                                               onClick={() => onOpenRevisionModal && onOpenRevisionModal(company, stage)}
